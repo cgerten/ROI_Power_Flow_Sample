@@ -6,8 +6,9 @@
 
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Index &#8212; My sample book</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>&lt;no title&gt; &#8212; My sample book</title>
   
   
   
@@ -56,9 +57,10 @@
     <script async="async" src="_static/sphinx-thebe.js?v=c100c467"></script>
     <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
     <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'genindex';</script>
-    <link rel="index" title="Index" href="#" />
+    <script>DOCUMENTATION_OPTIONS.pagename = 'Power Flow and Contingency Sample';</script>
+    <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Welcome to your Jupyter Book" href="intro.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   </head>
@@ -120,8 +122,6 @@
     <div class="bd-container__inner bd-page-width">
       
       
-      
-        
       
       <div class="bd-sidebar-primary bd-sidebar">
         
@@ -248,7 +248,7 @@
       
       
       
-      <li><a href="https://github.com/executablebooks/jupyter-book/issues/new?title=Issue%20on%20page%20%2Fgenindex.html&body=Your%20issue%20content%20here." target="_blank"
+      <li><a href="https://github.com/executablebooks/jupyter-book/issues/new?title=Issue%20on%20page%20%2FPower Flow and Contingency Sample.html&body=Your%20issue%20content%20here." target="_blank"
    class="btn btn-sm btn-source-issues-button dropdown-item"
    title="Open an issue"
    data-bs-placement="left" data-bs-toggle="tooltip"
@@ -260,6 +260,54 @@
   </span>
 <span class="btn__text-container">Open issue</span>
 </a>
+</li>
+      
+  </ul>
+</div>
+
+
+
+
+
+
+<div class="dropdown dropdown-download-buttons">
+  <button class="btn dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-label="Download this page">
+    <i class="fas fa-download"></i>
+  </button>
+  <ul class="dropdown-menu">
+      
+      
+      
+      <li><a href="_sources/Power Flow and Contingency Sample.ipynb" target="_blank"
+   class="btn btn-sm btn-download-source-button dropdown-item"
+   title="Download source file"
+   data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="btn__text-container">.ipynb</span>
+</a>
+</li>
+      
+      
+      
+      
+      <li>
+<button onclick="window.print()"
+  class="btn btn-sm btn-download-pdf-button dropdown-item"
+  title="Print to PDF"
+  data-bs-placement="left" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="btn__text-container">.pdf</span>
+</button>
 </li>
       
   </ul>
@@ -301,7 +349,9 @@ document.write(`
   </button>
 `);
 </script>
-
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
 </div></div>
       
     </div>
@@ -312,11 +362,19 @@ document.write(`
               
 
 <div id="jb-print-docs-body" class="onlyprint">
-    <h1></h1>
+    <h1><no title></h1>
     <!-- Table of contents -->
     <div id="print-main-content">
         <div id="jb-print-toc">
             
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="simple visible nav section-nav flex-column">
+</ul>
+
+            </nav>
         </div>
     </div>
 </div>
@@ -326,13 +384,78 @@ document.write(`
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
+  <p><strong>ROI Power System Analysis Tool - CLG</strong></p>
+<ul class="simple">
+<li><p>Objective is to accurately model the Irish transmission system and provide power system screening for existing and new wind, solar, and energy storage projects. This is done using public data and open source tools such as pandapower.</p></li>
+<li><p>Below has been through several iterations and is not perfect, developed by Charlie Gerten in 2024 to model Summer 2031.</p></li>
+<li><p>Generator list, network topology, and other features of the network should be reviewed regularly for accuracy. Does not include any portion of Northern Irish network.</p></li>
+</ul>
+<p>The below is a sample of the actual tool available upon request by reaching out to the author.</p>
+<p>Model used for powerflow analysis, imports existing network from pickle, adjusts network based on line, transformer, generator, load, and reactive power equipment data. Based on the year 2031 from Eirgrid’s TYTFS. Only models ROI, does not model any NI network. Outputs line loading and bus results in csv files in “Results” folder. Various plots are also provided for a visual representation of the load flow, worst case contingency and test energy storage net impact. Energy storage net impact is done using DCOPF and measures the sum of loading change before and after implementing the energy storage generator in an intact system.</p>
+<p><strong>Determining optimal system wind and solar capacity factors to obtain convergence</strong></p>
+<ul class="simple">
+<li><p>In order to build cases for screening, it’s important to first determine what the maximum tollerable wind and solar capacity factors are that will still allow each case to solve and converge properly. The goal being to reduce the amount of power that the slack bus generator needs to provide.</p></li>
+</ul>
+<p><img alt="Optimal Capacity Factors" src="_images/Optimal_cf.png" /></p>
+<p>The purpose of the Mixed_varied_No_BESS is to create sub-cases in order to dig deeper into comparing which circuits and transformers experience the largest change in loading when shifting between a mixed dispatch to a wind or solar dominant dispatch. Below is a sample plot comparing various circuits starting with a mixed dispatch, shifting first toward wind dominant, then resetting and shifting toward a solar dominant dispatch:</p>
+<p><img alt="Loading Percentages for Specified Lines Across Configurations" src="_images/Loading_percentages.png" /></p>
+<p><strong>Detailed intact powerflow, contingency and BESS nodal results</strong></p>
+<p><img alt="Detailed Output of script" src="_images/Detailed_output.png" /></p>
+<ul class="simple">
+<li><p>The script will automatically take each case and dispatch from the previous cell in order to solve and display results. Users can determine which stations they want included and look within the “Results” folder for comprehensive bus, line, and transformer intact and contingency results.</p></li>
+<li><p>Various power flow calculation methods are attempted each time, although typically success is reached by utilizing Newton Raphson initialized in a DC manner with Q limits on each generator enforced.</p></li>
+<li><p>The slack generator in this model is Turlogh Hill with each of the four individual generators combined into a single slack generator. If at all possible, the generation level of this slack bus generator should be minimized as it is typically only used for minor reserve balancing.</p></li>
+<li><p>After the Slack Generator output, there are best and worst results for charging and discharging nodal analysis done with DCOPF. This portion of the script places a sample 1 MW generator at each node, solves the model and notes total net change in line/transformer loading in an intact system. Afterwards it provides the best and worst results sorted by smallest to largest as the point is to find nodes where a generator has a net negative impact to line loading. It first completes this with the generator set to “charge” as in negative power production, then moves to “discharge”. This is done using DCOPF in order to complete this quickly. While described as the impact of test BESS, this can be utilized to compare various nodes for which are better suited for additional generation or additional load in a lightweight initial screening view. It should be noted that the “charging” and “discharging” results should be almost mirrored in most cases.</p></li>
+<li><p>Additionally, because it measures the impact in a way that compares net loading percentage before and after connecting the test generator, this tends to become biased toward nodes that are closest to generation nodes or remotely  connected nodes. For example, Sorne Hill and Letterkenny tend to be the best result in test BESS charging cases for wind dominant dispatches as they contain fairly isolated wind generators.</p></li>
+</ul>
+<p><strong>Detailed intact powerflow, contingency and BESS nodal results</strong>
+<img alt="Plotly output from powerflow" src="_images/Plotly_output.png" /></p>
+<ul class="simple">
+<li><p>For each successful case, a network diagram is created to display the pwoer flow results. Plotly is used to display these results from PandaPower. This sample shows output from a wind dominant dispatch with BESS units set to zero in the Summer Peak of 2031.</p></li>
+<li><p>By hovering over the midpoint of each line, the user can determine the line name, intact loading percentage, real and reactive power, worst case loading percentage and the element which causes that worst case overload. Each line is color coded based on intact line loading, turning more red-tinted as the loading increases and blue as the line loading decreases. In the above example, Cahir-Doon experiences a line loading of roughly 100%. Arrows on each line display the real power flow direction. By hovering over each node, results from the test BESS net impact are found, allowing the user to quickly compare which nodes would have a better net loading impact by having a charging or discharging generator connected at the node.</p></li>
+</ul>
+<p><strong>Further options and additional functionality</strong></p>
+<p>Additional functionality includes but is not limited to:</p>
+<ul class="simple">
+<li><p>Nodal hosting capacity analysis.</p></li>
+<li><p>Generator connection method option comparison.</p></li>
+<li><p>Network reinforcement sensitivities.</p></li>
+</ul>
+<p>Further options under development:</p>
+<ul class="simple">
+<li><p>Expanding existing nodal BESS net impact functionality such that the net impact is measured by worst case contingency.</p></li>
+<li><p>Expanding applicable cases such that a subset of a full year 8760 ecnomic dispatch can be run in order to imitate Eirgrid constraint study which utilizes PLEXOS.</p></li>
+<li><p>Shift factor analysis</p></li>
+<li><p>Comprehensive plotting and geographic overlay.</p></li>
+<li><p>Integration with ChatGPT or Llama</p></li>
+</ul>
+<p>Advantages and Disadvantages:</p>
+<ul class="simple">
+<li><p>Significantly cheaper than TARA or PSSE.</p></li>
+<li><p>More easily adaptable to various python libraries and packages.</p></li>
+<li><p>Minimal technical or power system knowledge required.</p></li>
+</ul>
+<p>While this tool is not perfect, it provides a quick, light-weight screening for HV transmission nodes in the Irish system. The background data feeding into this tool is reviewed, aggregated, and compared against the latest system information provided publically by Eirgrid and ESB.</p>
 
-<h1 id="index">Index</h1>
-
-<div class="genindex-jumpbox">
- 
-</div>
-
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "binder-examples/jupyter-stacks-datascience",
+            ref: "master",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            name: "python3",
+            path: "./."
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
 
                 </article>
               
@@ -344,12 +467,36 @@ document.write(`
                 <footer class="prev-next-footer d-print-none">
                   
 <div class="prev-next-area">
+    <a class="left-prev"
+       href="intro.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Welcome to your Jupyter Book</p>
+      </div>
+    </a>
 </div>
                 </footer>
               
             </div>
             
             
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="simple visible nav section-nav flex-column">
+</ul>
+
+  </nav></div>
+
+</div></div>
               
             
           </div>

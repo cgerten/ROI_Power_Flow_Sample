@@ -6,8 +6,8 @@ Built using public data, bugs and other errors are consitently being monitored a
 
 The full tool which can be utilized by contacting the author: 
 Charlie Gerten
-charlie.gerten@highfieldenergy.com
-charles.gerten@colorado.edu
+<charlie.gerten@highfieldenergy.com>
+<charles.gerten@colorado.edu>
 
 For the sample output of this tool and other details please navigate to the link below
 

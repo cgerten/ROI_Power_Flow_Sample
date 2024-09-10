@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <title>Welcome to a new power system screening tool for the Republic of Ireland &#8212; My sample book</title>
+    <title>ROI Power System Analysis Tool Outline &#8212; My sample book</title>
   
   
   
@@ -57,10 +57,11 @@
     <script async="async" src="_static/sphinx-thebe.js?v=c100c467"></script>
     <script>var togglebuttonSelector = '.toggle, .admonition.dropdown';</script>
     <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"; const thebe_selector = ".thebe,.cell"; const thebe_selector_input = "pre"; const thebe_selector_output = ".output, .cell_output"</script>
-    <script>DOCUMENTATION_OPTIONS.pagename = 'intro';</script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'Power Flow and Contingency Outline';</script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="ROI Power System Analysis Tool Outline" href="Power%20Flow%20and%20Contingency%20Outline.html" />
+    <link rel="next" title="Sample Test Cases" href="Sample%20Test%20Cases.html" />
+    <link rel="prev" title="Welcome to a new power system screening tool for the Republic of Ireland" href="intro.html" />
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <meta name="docsearch:language" content="en"/>
   </head>
@@ -123,8 +124,6 @@
       
       
       
-        
-      
       <div class="bd-sidebar-primary bd-sidebar">
         
 
@@ -143,7 +142,7 @@
     
   
 
-<a class="navbar-brand logo" href="#">
+<a class="navbar-brand logo" href="intro.html">
   
   
   
@@ -174,14 +173,14 @@
     <div class="bd-toc-item navbar-nav active">
         
         <ul class="nav bd-sidenav bd-sidenav__home-link">
-            <li class="toctree-l1 current active">
-                <a class="reference internal" href="#">
+            <li class="toctree-l1">
+                <a class="reference internal" href="intro.html">
                     Welcome to a new power system screening tool for the Republic of Ireland
                 </a>
             </li>
         </ul>
-        <ul class="nav bd-sidenav">
-<li class="toctree-l1"><a class="reference internal" href="Power%20Flow%20and%20Contingency%20Outline.html">ROI Power System Analysis Tool Outline</a></li>
+        <ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">ROI Power System Analysis Tool Outline</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Sample%20Test%20Cases.html">Sample Test Cases</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Sources.html">Sources</a></li>
 </ul>
@@ -255,7 +254,7 @@
       
       
       
-      <li><a href="https://github.com/executablebooks/jupyter-book/issues/new?title=Issue%20on%20page%20%2Fintro.html&body=Your%20issue%20content%20here." target="_blank"
+      <li><a href="https://github.com/executablebooks/jupyter-book/issues/new?title=Issue%20on%20page%20%2FPower Flow and Contingency Outline.html&body=Your%20issue%20content%20here." target="_blank"
    class="btn btn-sm btn-source-issues-button dropdown-item"
    title="Open an issue"
    data-bs-placement="left" data-bs-toggle="tooltip"
@@ -285,7 +284,7 @@
       
       
       
-      <li><a href="_sources/intro.md" target="_blank"
+      <li><a href="_sources/Power Flow and Contingency Outline.ipynb" target="_blank"
    class="btn btn-sm btn-download-source-button dropdown-item"
    title="Download source file"
    data-bs-placement="left" data-bs-toggle="tooltip"
@@ -295,7 +294,7 @@
 <span class="btn__icon-container">
   <i class="fas fa-file"></i>
   </span>
-<span class="btn__text-container">.md</span>
+<span class="btn__text-container">.ipynb</span>
 </a>
 </li>
       
@@ -367,7 +366,7 @@ document.write(`
               
 
 <div id="jb-print-docs-body" class="onlyprint">
-    <h1>Welcome to a new power system screening tool for the Republic of Ireland</h1>
+    <h1>ROI Power System Analysis Tool Outline</h1>
     <!-- Table of contents -->
     <div id="print-main-content">
         <div id="jb-print-toc">
@@ -381,25 +380,55 @@ document.write(`
 <div id="searchbox"></div>
                 <article class="bd-article">
                   
-  <section class="tex2jax_ignore mathjax_ignore" id="welcome-to-a-new-power-system-screening-tool-for-the-republic-of-ireland">
-<h1>Welcome to a new power system screening tool for the Republic of Ireland<a class="headerlink" href="#welcome-to-a-new-power-system-screening-tool-for-the-republic-of-ireland" title="Link to this heading">#</a></h1>
-<p>This is a small sample book to give you a feel for how high voltage transmission screening can be done for new wind, solar, or battery storage projects.</p>
+  <section class="tex2jax_ignore mathjax_ignore" id="roi-power-system-analysis-tool-outline">
+<h1>ROI Power System Analysis Tool Outline<a class="headerlink" href="#roi-power-system-analysis-tool-outline" title="Link to this heading">#</a></h1>
+<p>The tool is built and regularly updated using public sources including but not limited to Eirgrid’s Ten Year Transmission Forecast Statement (TYTFS). The model operates in a simple manner for powerflow analysis, utilizing the open source tool PandaPower and other python functionality for data processing. It is currently focused on modeling scenarios in summer of 2031, but can easily be updated to reflect other scenarios or years in order to meet the needs of the user. At the moment it only models ROI, does not model any NI network but can be expanded as necessary to fit further needs.</p>
+<p>Outputs can come in many forms, line loading and bus results can be produced by csv files in “Results” folder. Various plots are also provided for a visual representation of the load flow, worst case contingency and test energy storage net impact. Load flow is solved using ACOPF newton raphson using DC initialization. Energy storage net impact is done using DCOPF and measures the sum of loading change before and after implementing the energy storage generator in an intact system providing the user a high level locational aspect as to which nodes are better suited for additional generation or demand for each unique scenario.</p>
+<p><strong>Determining optimal system wind and solar capacity factors to obtain convergence</strong></p>
 <ul class="simple">
-<li><p>By using open source tools such as PandaPower, the objective is to accurately model the Irish transmission system and provide quick assessments for new capacity.</p></li>
-<li><p>This tool is continuously improving by monitoring public data, it demonstrates the ability to keep up with rapid changes in the Irish renewable energy industry.</p></li>
-<li><p>Generator list, network topology, and other features of the network can be altered in order to fit the needs of the user with minimal turnaround time.</p></li>
+<li><p>In order to build cases for screening, it’s important to first determine what the maximum tollerable wind and solar capacity factors are that will still allow each case to solve and converge properly. The goal being to find the levels of renewable energy dispatch that allow the system to converge for each unique case and scenario. Each unique case is meant to represent a wind dominant, solar dominant or mixed renewable dispatch that is seen to be rare in occurence. This is informed by assessing hourly dispatch data from ECP constraint reports, Tomorrow’s Energy Scenarios (TES), and other data from Eirgrid and ESB. The below screenshot is an example output that feeds into the next stages as the starting point capacity factors used for each case under study.</p></li>
 </ul>
-<p>For the sample outputs from this tool, use cases, and other details please navigate to the link below</p>
-<div class="toctree-wrapper compound">
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="Power%20Flow%20and%20Contingency%20Outline.html">ROI Power System Analysis Tool Outline</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Sample%20Test%20Cases.html">Sample Test Cases</a></li>
-<li class="toctree-l1"><a class="reference internal" href="Sources.html">Sources</a></li>
+<p><img alt="Optimal Capacity Factors" src="_images/Optimal_cf.png" /></p>
+<p>The purpose of the Mixed_varied_No_BESS is to create sub-cases in order to dig deeper into comparing which circuits and transformers experience the largest change in loading when shifting between a mixed dispatch to a wind or solar dominant dispatch within that same season of study (summer). The user has the ability to list any network element in order to monitor changes to the power flow result caused by the varied dispatches. Below is a sample plot comparing various 110kV circuits starting with a mixed dispatch, shifting first toward wind dominant, then resetting at configuration 9 and shifting toward a solar dominant dispatch. Line loading percentages are plotted, but other system result metrics such as bus voltage can be chosen as well:</p>
+<p><img alt="Loading Percentages for Specified Lines Across Configurations" src="_images/Loading_percentages.png" /></p>
+<p><strong>Detailed intact powerflow, contingency and BESS nodal results</strong></p>
+<p><img alt="Detailed Output of script" src="_images/Detailed_output.png" /></p>
+<ul class="simple">
+<li><p>The user can then specify which sensitivities they would like to have run in order to compare the results with/without certain elements, network upgrades, or generator sizes. Allowing the user to gage the net impact of select changes and easily compare future options.</p></li>
+<li><p>The script will automatically take each case and dispatch from the previous cell in order to solve and display results. Users can then review comprehensive bus, line, and transformer intact and contingency results.</p></li>
+<li><p>Various power flow calculation methods are attempted each time, although typically success is reached by utilizing Newton Raphson initialized in a DC manner with Q limits on each generator enforced.</p></li>
+<li><p>The slack generator in this model is Turlogh Hill with each of the four individual generators combined into a single slack generator. In nearly all attempts, the generation level of this slack bus generator should be minimized as it is typically only used for minor reserve balancing.</p></li>
+<li><p>After the Slack Generator output, there are best and worst results for charging and discharging nodal analysis done with DCOPF. This portion of the script places a sample 1 MW generator at each node, solves the model and notes total net change in line/transformer loading in an intact system. Afterwards it provides the best and worst results sorted by smallest to largest as the point is to find nodes where a generator has a net negative impact to line loading. It first completes this with the generator set to “charge” as in negative power production, then moves to “discharge”. This is done using DCOPF in order to prioritize efficiency for this portion of the script. While described as the impact of test BESS, this can be utilized to compare various nodes for which are better suited for additional generation or additional load in a lightweight initial screening view. It should be noted that the “charging” and “discharging” results should be almost mirrored in most cases.</p></li>
+<li><p>It is worth noting that because it measures the impact in such a way that compares net loading percentage before and after connecting the test generator, this carries a bias toward nodes that are closest to generation nodes or remotely  connected nodes. For example, Sorne Hill and Letterkenny tend to be the best result in test BESS charging cases for wind dominant dispatches as they contain fairly isolated wind generators.</p></li>
 </ul>
-</div>
-<p>The full tool can be utilized by contacting the author: Charlie Gerten, MSEE</p>
-<p><a class="reference external" href="mailto:charlie&#46;gerten&#37;&#52;&#48;highfieldenergy&#46;com">charlie<span>&#46;</span>gerten<span>&#64;</span>highfieldenergy<span>&#46;</span>com</a>
-<a class="reference external" href="mailto:charles&#46;gerten&#37;&#52;&#48;colorado&#46;edu">charles<span>&#46;</span>gerten<span>&#64;</span>colorado<span>&#46;</span>edu</a></p>
+<p><strong>Detailed intact powerflow, contingency and BESS nodal results</strong></p>
+<p><img alt="Plotly output from powerflow" src="_images/Plotly_output.png" /></p>
+<ul class="simple">
+<li><p>For each successful case, a network diagram is created to display the power flow results. Plotly is used to display these results from PandaPower. This sample shows output from a wind dominant dispatch with BESS units set to zero in the Summer Peak of 2031.</p></li>
+<li><p>By hovering over the midpoint of each line, the user can determine the line name, intact loading percentage, real and reactive power, worst case loading percentage and the element which causes that worst case overload. Each line is color coded based on intact line loading, turning more red-tinted as the loading increases and blue as the line loading decreases. In the above example, Cahir-Doon experiences a line loading of roughly 100%. Arrows on each line display the real power flow direction. By hovering over each node, results from the test BESS net impact are found, allowing the user to quickly compare which nodes would have a better net loading impact by having a charging or discharging generator connected at the node.</p></li>
+</ul>
+<p><strong>Further options and additional functionality</strong></p>
+<p>Additional functionality includes but is not limited to:</p>
+<ul class="simple">
+<li><p>Nodal hosting capacity analysis.</p></li>
+<li><p>Generator connection method option comparison.</p></li>
+<li><p>Network reinforcement sensitivities.</p></li>
+<li><p>Expanding applicable cases such that a subset of a full year 8760 economic dispatch can be run in order to assess the frequency of highly loaded network elements. This is done in a manner to imitate Eirgrid constraint study without using an economic dispatch model such as PLEXOS.</p></li>
+</ul>
+<p>Further options under development:</p>
+<ul class="simple">
+<li><p>Expanding existing nodal BESS net impact functionality such that the net impact is measured by worst case contingency.</p></li>
+<li><p>Shift factor analysis</p></li>
+<li><p>Comprehensive plotting and geographic overlay.</p></li>
+<li><p>Integration with ChatGPT or Llama</p></li>
+</ul>
+<p>Advantages and Disadvantages:</p>
+<ul class="simple">
+<li><p>Significantly cheaper than TARA or PSSE.</p></li>
+<li><p>More easily adaptable to various python libraries and packages.</p></li>
+<li><p>Minimal technical or power system knowledge required.</p></li>
+</ul>
+<p>While this tool is not perfect, it provides a quick, light-weight screening for HV transmission nodes in the Irish system. The background data feeding into this tool is reviewed, aggregated, and compared against the latest system information provided publically by Eirgrid and ESB.</p>
 </section>
 
     <script type="text/x-thebe-config">
@@ -432,12 +461,21 @@ document.write(`
                 <footer class="prev-next-footer d-print-none">
                   
 <div class="prev-next-area">
+    <a class="left-prev"
+       href="intro.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Welcome to a new power system screening tool for the Republic of Ireland</p>
+      </div>
+    </a>
     <a class="right-next"
-       href="Power%20Flow%20and%20Contingency%20Outline.html"
+       href="Sample%20Test%20Cases.html"
        title="next page">
       <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">ROI Power System Analysis Tool Outline</p>
+        <p class="prev-next-title">Sample Test Cases</p>
       </div>
       <i class="fa-solid fa-angle-right"></i>
     </a>

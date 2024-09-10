@@ -1,11 +1,15 @@
-# Welcome to your Jupyter Book
+# Welcome to a new power system screening tool for the Republic of Ireland
 
-This is a small sample book to give you a feel for how book content is
-structured.
-It shows off a few of the major file types, as well as some sample content.
-It does not go in-depth into any particular topic - check out [the Jupyter Book documentation](https://jupyterbook.org) for more information.
+This is a small sample book to give you a feel for how high voltage transmission screening can be done for new wind, solar, or battery storage projects. 
 
-Check out the content pages bundled with this sample book to see more.
+Built using public data, bugs and other errors are consitently being monitored and resolved, please use at your own discresion. 
+
+The full tool which can be utilized by contacting the author: 
+Charlie Gerten
+charlie.gerten@highfieldenergy.com
+charles.gerten@colorado.edu
+
+For the sample output of this tool and other details please navigate to the link below
 
 ```{tableofcontents}
 ```

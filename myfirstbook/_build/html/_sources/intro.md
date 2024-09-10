@@ -5,6 +5,10 @@ This is a small sample book to give you a feel for how high voltage transmission
 Built using public data, bugs and other errors are consitently being monitored and resolved, please use at your own discresion. 
 
 The full tool which can be utilized by contacting the author: Charlie Gerten, MSEE
+
+<charlie.gerten@highfieldenergy.com>
+<charles.gerten@colorado.edu>
+
 For the sample output of this tool and other details please navigate to the link below
 
 ```{tableofcontents}

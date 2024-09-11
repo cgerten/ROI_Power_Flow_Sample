@@ -395,6 +395,22 @@ document.write(`
 <p><img alt="Sample Solar Prospective Project" src="_images/Cashla_Ennis_solar.png" /></p>
 <p><img alt="Sample Solar Prospective Project" src="_images/Cashla_Dalton_solar.png" /></p>
 <p><img alt="Sample Solar Prospective Project" src="_images/Castlebar_Cloon_solar.png" /></p>
+<p>At first glance, the loading differences appear to be minimal, at each of the following nodes we can see how a sample generator connected to that node would change the net loading in the system.</p>
+<p>Discharging 1 MW:</p>
+<p>Ennis: +1.41 %</p>
+<p>Agannygal: +1.88 %</p>
+<p>Cashla: +0.880 %</p>
+<p>Cloon: +1.235 %</p>
+<p>Dalton: +0.6265 %</p>
+<p>Castlebar: +0.2057 %</p>
+<p>Aditionally,by varying the wind and solar dispatches and keeping the other variables unchanged, we can see that the loading shifts according to wind dominant vs. solar dominant dispatches with other variables kept the same. Highlighted in blue are the dispatches in which the wind capacity factor is increased while decreasing solar capacity factor and highlighted in orange performs the reverse. The intact loading percentages reveal how the circuits under consideration to the north are more heavily utilized in wind dominant dispatches.</p>
+<p><img alt="Sample Solar Prospective Project" src="_images/Loading_changes.png" /></p>
+<p>From the other cases, we can observe the impact of local battery storage projects under adjusted dispatches. The following results are shosen from mixed dispatches with all Battery Storage projects dispatched to full import.</p>
+<p>Dispatches considered:</p>
+<p>Summer Valley: Wind CF = 10%, Solar CF = 10%</p>
+<p>Supper Peak: Wind CF = 27%, Solar CF = 27%</p>
+<p>Summer Peak Solar Dominant: Wind CF = 0.1%, Solar CF = 59%</p>
+<p>Summer Peak Wind Dominant: Wind CF = 51%, Solar CF = 0.1%</p>
 </section>
 
     <script type="text/x-thebe-config">

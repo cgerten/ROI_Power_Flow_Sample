@@ -384,18 +384,21 @@ document.write(`
 <h1>Sample Test Cases<a class="headerlink" href="#sample-test-cases" title="Link to this heading">#</a></h1>
 <p>Let’s begin by investigating a prospective solar project in the early stages, with a target energization of 2031.</p>
 <p><img alt="Sample Solar Prospective Project" src="_images/Potential_project_sites.png" /></p>
-<p>Hypothetically, if you have land in either of these general areas highlighted in the image above for solar generation development large enough to reasonably achieve 50-100 MW maximum export capacity (MEC). You may see benefit in an early screening as to which circuit would be better suited for connection.</p>
+<p><img alt="Sample Solar Prospective Project" src="_images/Charleville_Glenlara_solar_line.png" /></p>
+<p>Hypothetically, if you have land in either of these general areas highlighted in the images above for solar generation development large enough to reasonably achieve 50-100 MW maximum export capacity (MEC). You may see benefit in an early screening as to which circuit would be better suited for connection.</p>
 <p>Desktop review would reveal the following ratings for each circuit:</p>
 <p>Cashla - Ennis 110kV (178/209 MVA)</p>
 <p>Agannygal - Ennis 110kV (99/121 MVA)</p>
 <p>Castlebar - Cloon 110kV (178/209 MVA)</p>
 <p>Cashla - Doon 110kV (99/121 MVA), uprate planned according to NDP and Transmission Development Plan under CP1428</p>
+<p>Charleville - Glenlara 110kV (99/121 MVA)</p>
 <p>After reviewing the other network elements and generators we can obtain the first powerflow screening for each individual circuit. The below demonstrates a Summer Peak case in 2031 with solar generation dispatched to nearly 100%, wind generation dispatched to nearly 0%, storage set to 0%, interconnectors set to high export levels and other standard generation set to minimal thresholds according to minimum system operation guidelines.</p>
 <p><img alt="Sample Solar Prospective Project" src="_images/Agannygal_Ennis_solar.png" /></p>
 <p><img alt="Sample Solar Prospective Project" src="_images/Cashla_Ennis_solar.png" /></p>
 <p><img alt="Sample Solar Prospective Project" src="_images/Cashla_Dalton_solar.png" /></p>
 <p><img alt="Sample Solar Prospective Project" src="_images/Castlebar_Cloon_solar.png" /></p>
-<p>At first glance, the loading differences appear to be minimal, at each of the following nodes we can see how a sample generator connected to that node would change the net loading in the system.</p>
+<p><img alt="Sample Solar Prospective Project" src="_images/Charleville_Glenlara_solar.png" /></p>
+<p>In order to get a better understanding of the performance of a sample generator at each node, DCOPF nodal analysis is run over a geographic diverse set of nodes in the system. This shows the change in net loading of the system responding to the action of that sample generator. Discharging results are shown below, but charging results are also available allowing for rapid results and judgement of how a sample demand, generator or energy storage system may perform in that unique scenario. For the previous scenario we observe the following results:</p>
 <p>Discharging 1 MW:</p>
 <p>Ennis: +1.41 %</p>
 <p>Agannygal: +1.88 %</p>
@@ -403,14 +406,21 @@ document.write(`
 <p>Cloon: +1.235 %</p>
 <p>Dalton: +0.6265 %</p>
 <p>Castlebar: +0.2057 %</p>
-<p>Aditionally,by varying the wind and solar dispatches and keeping the other variables unchanged, we can see that the loading shifts according to wind dominant vs. solar dominant dispatches with other variables kept the same. Highlighted in blue are the dispatches in which the wind capacity factor is increased while decreasing solar capacity factor and highlighted in orange performs the reverse. The intact loading percentages reveal how the circuits under consideration to the north are more heavily utilized in wind dominant dispatches.</p>
-<p><img alt="Sample Solar Prospective Project" src="_images/Loading_changes.png" /></p>
-<p>From the other cases, we can observe the impact of local battery storage projects under adjusted dispatches. The following results are shosen from mixed dispatches with all Battery Storage projects dispatched to full import.</p>
+<p>Charleville: +2.92 %</p>
+<p>Glenlara: +2.02 %</p>
+<p>Aditionally,by varying the wind and solar dispatches and keeping the other variables unchanged, we can see that the loading shifts according to wind dominant vs. solar dominant dispatches with other variables kept the same. Highlighted in blue are the dispatches in which the wind capacity factor is increased while decreasing solar capacity factor and highlighted in orange performs the reverse. This presents how the existing generation puts pressure on the local circuits, particularly useful for the Charleville-Glenlara circuit as each is modelled with a medium/large solar and wind generator respectively.</p>
+<p><img alt="Sample Solar Prospective Project" src="_images/Loading_changes_added_circuit.png" /></p>
+<p>From the other cases, we can observe the impact of local battery storage projects under adjusted dispatches. The following results are chosen from mixed dispatches with all Battery Storage projects dispatched to either full import or full export.</p>
 <p>Dispatches considered:</p>
-<p>Summer Valley: Wind CF = 10%, Solar CF = 10%</p>
-<p>Supper Peak: Wind CF = 27%, Solar CF = 27%</p>
-<p>Summer Peak Solar Dominant: Wind CF = 0.1%, Solar CF = 59%</p>
-<p>Summer Peak Wind Dominant: Wind CF = 51%, Solar CF = 0.1%</p>
+<p>Summer Peak: Wind CF = 64%, Solar CF = 64%, BESS full import</p>
+<p>Supper Peak: Wind CF = 26%, Solar CF = 26%, BESS full export</p>
+<p>Summer Peak: Wind CF = 93%, Solar CF = 40%, BESS full import</p>
+<p>Summer Peak: Wind CF = 35%, Solar CF = 91%, BESS full import</p>
+<p>Summer Peak: Wind CF = 49%, Solar CF = 0.1%, BESS full export</p>
+<p>Summer Peak: Wind CF = 0.1%, Solar CF = 54%, BESS full export</p>
+<p><img alt="Sample Solar Prospective Project" src="_images/intact_loading_test_solar_compare.png" /></p>
+<p>Each dispatch on its own is not meant to be disqualifying, rather they are each meant to display rare occurences in the system where most hours of operation will occur below those generation thresholds. The plot above displays the tradeoffs of locating projects closer or further away to cross technology generators. Notably, the Charleville-Glenlara circuit experiencing the highest loading of the group for dispatches that are solar dominant regardless of the BESS operation.</p>
+<p><img alt="Sample Solar Prospective Project" src="_images/max_loading_test_solar_compare.png" /></p>
 </section>
 
     <script type="text/x-thebe-config">

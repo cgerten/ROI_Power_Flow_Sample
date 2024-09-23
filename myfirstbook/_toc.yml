@@ -5,5 +5,4 @@ format: jb-book
 root: intro
 chapters:
 - file: Power Flow and Contingency Outline.ipynb
-- file: Sample Test Cases.ipynb
 - file: Sources.ipynb

@@ -388,45 +388,56 @@ document.write(`
 <li><p>In order to build cases for screening, it’s important to first determine what the maximum tollerable wind and solar capacity factors are that will still allow each case to solve and converge properly. The goal being to find the levels of renewable energy dispatch that allow the system to converge for each unique case. Each unique case is meant to represent a slice of time from an average winter day and average summer day, taking the typical scaled demand for that time of day and meeting it with the maximum amount of wind or solar generation that is statistically likely to occur at that time. This is informed by assessing hourly dispatch data from ECP constraint reports, Tomorrow’s Energy Scenarios (TES), and other data from Eirgrid and ESB. The below screenshot is an example output that feeds into the next stages as the starting point capacity factors used for each case under study.</p></li>
 </ul>
 <p>Summary of Successful Capacity Factors:</p>
-<p>BESS_Import_Wind_Dominant_intexport_W3pm: Wind CF = 0.88, Solar CF = 0.1, Interconnector CF = -1</p>
-<p>BESS_Import_Wind_Dominant_intzero_W3pm: Wind CF = 0.8400000000000001, Solar CF = 0.1, Interconnector CF = 0</p>
-<p>Wind_Dominant_intexport_W3pm: Wind CF = 0.7300000000000001, Solar CF = 0.1, Interconnector CF = -1</p>
-<p>Wind_Dominant_intzero_W3pm: Wind CF = 0.68, Solar CF = 0.1, Interconnector CF = 0</p>
-<p>BESS_Import_Wind_Dominant_intexport_W9am: Wind CF = 0.86, Solar CF = 0.1, Interconnector CF = -</p>
-<p>BESS_Import_Wind_Dominant_intzero_W9am: Wind CF = 0.8200000000000001, Solar CF = 0.1, Interconnector CF = 0</p>
-<p>Wind_Dominant_intzero_W9am: Wind CF = 0.66, Solar CF = 0.1, Interconnector CF =</p>
-<p>Wind_Dominant_intexport_W9am: Wind CF = 0.7200000000000001, Solar CF = 0.1, Interconnector CF = -1</p>
-<p>BESS_Import_Wind_Dominant_intexport_W12pm: Wind CF = 0.78, Solar CF = 0.3, Interconnector CF = -1</p>
-<p>BESS_Import_Wind_Dominant_intzero_W12pm: Wind CF = 0.74, Solar CF = 0.3, Interconnector CF = 0</p>
-<p>Wind_Dominant_intzero_W12pm: Wind CF = 0.4900000000000001, Solar CF = 0.3, Interconnector CF = 0</p>
-<p>Wind_Dominant_intexport_W12pm: Wind CF = 0.54, Solar CF = 0.3, Interconnector CF = -1</p>
-<p>Wind_Dominant_intzero_W6pm: Wind CF = 0.9, Solar CF = 0, Interconnector CF = 0</p>
-<p>Wind_Dominant_intexport_W6pm: Wind CF = 0.9700000000000001, Solar CF = 0, Interconnector CF = -1</p>
+<p>Winter Season:</p>
 <p>BESS_Import_Wind_Dominant_intzero_W6am: Wind CF = 0.76, Solar CF = 0, Interconnector CF = 0</p>
 <p>BESS_Import_Wind_Dominant_intexport_W6am: Wind CF = 0.79, Solar CF = 0, Interconnector CF = -1</p>
-<p>Wind_Dominant_intzero_W6am: Wind CF = 0.6200000000000001, Solar CF = 0, Interconnector CF = -1</p>
-<p>Wind_Dominant_intexport_W6am: Wind CF = 0.63, Solar CF = 0, Interconnector CF = -1</p>
-<p>BESS_Import_Solar_Dominant_intexport_S3pm: Wind CF = 0.2, Solar CF = 0.9400000000000001, Interconnector CF = -1</p>
-<p>BESS_Import_Solar_Dominant_intzero_S3pm: Wind CF = 0.2, Solar CF = 0.8800000000000001, Interconnector CF = 0</p>
+<p>Wind_Dominant_intzero_W6am: Wind CF = 0.62, Solar CF = 0, Interconnector CF = -1</p>
+<p>Wind_Dominant_intexport_W6am: Wind CF = 0.63, Solar CF = 0, Interconnector CF = -</p>
+<p>BESS_Import_Wind_Dominant_intexport_W9am: Wind CF = 0.86, Solar CF = 0.1, Interconnector CF = -</p>
+<p>BESS_Import_Wind_Dominant_intzero_W9am: Wind CF = 0.82, Solar CF = 0.1, Interconnector CF = 0</p>
+<p>Wind_Dominant_intzero_W9am: Wind CF = 0.66, Solar CF = 0.1, Interconnector CF =</p>
+<p>Wind_Dominant_intexport_W9am: Wind CF = 0.72, Solar CF = 0.1, Interconnector CF = -1</p>
+<p>BESS_Import_Wind_Dominant_intexport_W12pm: Wind CF = 0.78, Solar CF = 0.3, Interconnector CF = -1</p>
+<p>BESS_Import_Wind_Dominant_intzero_W12pm: Wind CF = 0.74, Solar CF = 0.3, Interconnector CF = 0</p>
+<p>Wind_Dominant_intzero_W12pm: Wind CF = 0.49, Solar CF = 0.3, Interconnector CF = 0</p>
+<p>Wind_Dominant_intexport_W12pm: Wind CF = 0.54, Solar CF = 0.3, Interconnector CF = -1</p>
+<p>BESS_Import_Wind_Dominant_intexport_W3pm: Wind CF = 0.88, Solar CF = 0.1, Interconnector CF = -1</p>
+<p>BESS_Import_Wind_Dominant_intzero_W3pm: Wind CF = 0.84, Solar CF = 0.1, Interconnector CF = 0</p>
+<p>Wind_Dominant_intexport_W3pm: Wind CF = 0.73, Solar CF = 0.1, Interconnector CF = -1</p>
+<p>Wind_Dominant_intzero_W3pm: Wind CF = 0.68, Solar CF = 0.1, Interconnector CF = 0</p>
+<p>Wind_Dominant_intzero_W6pm: Wind CF = 0.9, Solar CF = 0, Interconnector CF = 0</p>
+<p>Wind_Dominant_intexport_W6pm: Wind CF = 0.97, Solar CF = 0, Interconnector CF = -1</p>
+<p>Summer Season:</p>
+<p>BESS_Import_Wind_Dominant_intexport_S6am: Wind CF = 0.58, Solar CF = 0.2, Interconnector CF = -1</p>
+<p>BESS_Import_Wind_Dominant_intzero_S6am: Wind CF = 0.54, Solar CF = 0.2, Interconnector CF = 0</p>
+<p>Wind_Dominant_intexport_S6am: Wind CF = 0.33, Solar CF = 0.2, Interconnector CF = -1</p>
+<p>Wind_Dominant_intzero_S6am: Wind CF = 0.29, Solar CF = 0.2, Interconnector CF =</p>
+<p>BESS_Import_Solar_Dominant_intexport_S9am: Wind CF = 0.2, Solar CF = 0.96, Interconnector CF = -1</p>
+<p>BESS_Import_Solar_Dominant_intzero_S9am: Wind CF = 0.2, Solar CF = 0.90, Interconnector CF = 0</p>
+<p>Solar_Dominant_intexport_S9am: Wind CF = 0.2, Solar CF = 0.52, Interconnector CF = -1</p>
+<p>Solar_Dominant_intzero_S9am: Wind CF = 0.2, Solar CF = 0.47, Interconnector CF = 0</p>
+<p>BESS_Import_Solar_Dominant_intexport_S12pm: Wind CF = 0.2, Solar CF = 0.97, Interconnector CF = -1</p>
+<p>BESS_Import_Solar_Dominant_intzero_S12pm: Wind CF = 0.2, Solar CF = 0.91, Interconnector CF = 0</p>
+<p>Solar_Dominant_intexport_S12pm: Wind CF = 0.2, Solar CF = 0.53, Interconnector CF = -1</p>
+<p>Solar_Dominant_intzero_S12pm: Wind CF = 0.2, Solar CF = 0.48, Interconnector CF = 0</p>
+<p>BESS_Import_Solar_Dominant_intexport_S3pm: Wind CF = 0.2, Solar CF = 0.94, Interconnector CF = -1</p>
+<p>BESS_Import_Solar_Dominant_intzero_S3pm: Wind CF = 0.2, Solar CF = 0.88, Interconnector CF = 0</p>
 <p>Solar_Dominant_intexport_S3pm: Wind CF = 0.2, Solar CF = 0.51, Interconnector CF = -1</p>
 <p>Solar_Dominant_intzero_S3pm: Wind CF = 0.2, Solar CF = 0.46, Interconnector CF = 0</p>
-<p>BESS_Import_Solar_Dominant_intexport_S9am: Wind CF = 0.2, Solar CF = 0.9600000000000001, Interconnector CF = -1</p>
-<p>BESS_Import_Solar_Dominant_intzero_S9am: Wind CF = 0.2, Solar CF = 0.9000000000000001, Interconnector CF = 0</p>
-<p>Solar_Dominant_intexport_S9am: Wind CF = 0.2, Solar CF = 0.52, Interconnector CF = -1</p>
-<p>Solar_Dominant_intzero_S9am: Wind CF = 0.2, Solar CF = 0.47000000000000003, Interconnector CF = 0</p>
 <p>BESS_Import_Wind_Dominant_intexport_S6pm: Wind CF = 0.68, Solar CF = 0.25, Interconnector CF = -1</p>
 <p>BESS_Import_Wind_Dominant_intzero_S6pm: Wind CF = 0.64, Solar CF = 0.25, Interconnector CF =</p>
 <p>Wind_Dominant_intexport_S6pm: Wind CF = 0.52, Solar CF = 0.2, Interconnector CF = -1</p>
-<p>Wind_Dominant_intzero_S6pm: Wind CF = 0.4700000000000001, Solar CF = 0.2, Interconnector CF = 0</p>
-<p>BESS_Import_Solar_Dominant_intexport_S12pm: Wind CF = 0.2, Solar CF = 0.9700000000000001, Interconnector CF = -1</p>
-<p>BESS_Import_Solar_Dominant_intzero_S12pm: Wind CF = 0.2, Solar CF = 0.91, Interconnector CF = 0</p>
-<p>Solar_Dominant_intexport_S12pm: Wind CF = 0.2, Solar CF = 0.53, Interconnector CF = -1</p>
-<p>Solar_Dominant_intzero_S12pm: Wind CF = 0.2, Solar CF = 0.48000000000000004, Interconnector CF = 0</p>
-<p>Wind_Dominant_intexport_S6am: Wind CF = 0.33, Solar CF = 0.2, Interconnector CF = -1</p>
-<p>Wind_Dominant_intzero_S6am: Wind CF = 0.29000000000000004, Solar CF = 0.2, Interconnector CF = 0</p>
-<p>BESS_Import_Wind_Dominant_intexport_S6am: Wind CF = 0.5800000000000001, Solar CF = 0.2, Interconnector CF = -1</p>
-<p>BESS_Import_Wind_Dominant_intzero_S6am: Wind CF = 0.54, Solar CF = 0.2, Interconnector CF = 0</p>
-<p>The purpose of the Mixed_varied_No_BESS is to create sub-cases in order to dig deeper into comparing which circuits and transformers experience the largest change in loading when shifting between a mixed dispatch to a wind or solar dominant dispatch within that same season of study (summer). The user has the ability to list any network element in order to monitor changes to the power flow result caused by the varied dispatches. Below is a sample plot comparing various 110kV circuits starting with a mixed dispatch, shifting first toward wind dominant, then resetting at configuration 9 and shifting toward a solar dominant dispatch. Line loading percentages are plotted, but other system result metrics such as bus voltage can be chosen as well:</p>
+<p>Wind_Dominant_intzero_S6pm: Wind CF = 0.47, Solar CF = 0.2, Interconnector CF = 0</p>
+<p>The above cases are not comprehensive of every possible dispatch scenario likely to be encountered in a sample year. Instead, they represent points with varying demand in order to help the user understand both the system response to each dispatch and the likelihood of each cases’ occurence according to the wind and solar capacity factors. By cross referencing the hour of each case against the ECP constraint wind and solar capacity factors, we can determine the percentage of hours at that time in which both the wind and solar capacity factors were higher than the levels specified in each case. This is one method to determine how rare or common each case is, which helps the user weigh the impact of any overloads noted in the results. Example percentages noted here:</p>
+<p>BESS_Import_Solar_Dominant_intexport_S12pm: Summer = 0.00%, Winter = 0.00%</p>
+<p>BESS_Import_Solar_Dominant_intzero_S12pm: Summer = 8.41%, Winter = 0.00%</p>
+<p>Solar_Dominant_intexport_S12pm: Summer = 34.11%, Winter = 1.90%</p>
+<p>Solar_Dominant_intzero_S12pm: Summer = 36.99%, Winter = 2.86%</p>
+<p>BESS_Import_Wind_Dominant_intexport_W3pm: Summer = 8.18%, Winter = 5.21%</p>
+<p>BESS_Import_Wind_Dominant_intzero_W3pm: Summer = 10.90%, Winter = 5.77%</p>
+<p>Wind_Dominant_intexport_W3pm: Summer = 14.99%, Winter = 8.56%</p>
+<p>Wind_Dominant_intzero_W3pm: Summer = 16.35%, Winter = 9.12%</p>
+<p>The user also has the ability to list any network element in order to monitor changes to the power flow result caused by the varied dispatches. Below is a sample plot comparing various 110kV circuits starting with a mixed dispatch, shifting first toward wind dominant, then resetting at configuration 9 and shifting toward a solar dominant dispatch. Line loading percentages are plotted, but other system result metrics such as bus voltage can be chosen as well:</p>
 <p><img alt="Loading Percentages for Specified Lines Across Configurations" src="_images/Loading_percentages.png" /></p>
 <p><strong>Detailed intact powerflow, contingency and BESS nodal results</strong></p>
 <p><img alt="Detailed Output of script" src="_images/Detailed_output.png" /></p>

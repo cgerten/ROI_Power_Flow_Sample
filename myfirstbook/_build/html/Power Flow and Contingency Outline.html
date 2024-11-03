@@ -437,8 +437,8 @@ document.write(`
 <p>BESS_Import_Wind_Dominant_intzero_W3pm: Summer = 10.90%, Winter = 5.77%</p>
 <p>Wind_Dominant_intexport_W3pm: Summer = 14.99%, Winter = 8.56%</p>
 <p>Wind_Dominant_intzero_W3pm: Summer = 16.35%, Winter = 9.12%</p>
-<p>The user also has the ability to list any network element in order to monitor changes to the power flow result caused by the varied dispatches. Below is a sample plot comparing various 110kV circuits starting with a mixed dispatch, shifting first toward wind dominant, then resetting at configuration 9 and shifting toward a solar dominant dispatch. Line loading percentages are plotted, but other system result metrics such as bus voltage can be chosen as well:</p>
-<p><img alt="Loading Percentages for Specified Lines Across Configurations" src="_images/Loading_percentages.png" /></p>
+<p>The user also has the ability to list any network element in order to monitor changes to the power flow result caused by the varied dispatches comparing different sensitiities. Sensitivities can be adjusted by the user to compare generator locations, network reinforcements and many more. The plot below demonstrates loading percentages on the monitored element for each of the unique cases where each sensitivity scenario captures an example PV project at differerent nodes. Line loading percentages under the worst case contingency are plotted, but other system result metrics such as bus voltage can be chosen as well:</p>
+<p><img alt="Loading Percentages for Monitored Element Across Sensitivities" src="_images/Louth_Lisdrum_Contingency_Plot.png" /></p>
 <p><strong>Detailed intact powerflow, contingency and BESS nodal results</strong></p>
 <p><img alt="Detailed Output of script" src="_images/Detailed_output.png" /></p>
 <ul class="simple">

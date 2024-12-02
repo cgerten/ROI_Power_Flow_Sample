@@ -6,4 +6,3 @@ root: intro
 chapters:
 - file: Power Flow and Contingency Outline.ipynb
 - file: Sources.ipynb
-- file: Case Study.ipynb

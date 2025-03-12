@@ -183,6 +183,7 @@
 <li class="toctree-l1"><a class="reference internal" href="Power%20Flow%20and%20Contingency%20Outline.html">Power Flow and Contingency Outline</a></li>
 <li class="toctree-l1"><a class="reference internal" href="Case%20Study.html">Case Study</a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">Hourly Timeseries Simulation</a></li>
+
 <li class="toctree-l1"><a class="reference internal" href="Sources.html">Sources</a></li>
 </ul>
 
@@ -356,7 +357,9 @@ document.write(`
   </button>
 `);
 </script>
-
+<button class="sidebar-toggle secondary-toggle btn btn-sm" title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</button>
 </div></div>
       
     </div>
@@ -372,6 +375,16 @@ document.write(`
     <div id="print-main-content">
         <div id="jb-print-toc">
             
+            <div>
+                <h2> Contents </h2>
+            </div>
+            <nav aria-label="Page">
+                <ul class="visible nav section-nav flex-column">
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#">Hourly Timeseries Simulation</a></li>
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#method">Method</a></li>
+</ul>
+
+            </nav>
         </div>
     </div>
 </div>
@@ -385,6 +398,10 @@ document.write(`
 <h1>Hourly Timeseries Simulation<a class="headerlink" href="#hourly-timeseries-simulation" title="Link to this heading">#</a></h1>
 <p>While the static load flow cases are useful, there is a need within the industry for more depth in order to understand how new generators or network reinforcements impact the system during normal operation. Existing optimized economic dispatch tools such as PLEXOS and GAMS are used within power system planning to simulate realistic operation while meeting various constraints. These tools are useful within the industry, but remain computationally intensive, expensive, and take signficiant time to produce outputs with different sensitivites such as ECP constraint reports.</p>
 <p>In light of the recent decision on Large Energy User connection, there will be a push for Eirgrid to create a network capacity tool similar to what has been created for the distribution network by ESB. It may not be feasible to have a new transmission network capacity tool supported by data from quarterly simulations using PLEXOS. Instead, this pandapower based tool is a capable alternative.</p>
+</section>
+<section class="tex2jax_ignore mathjax_ignore" id="method">
+<h1>Method<a class="headerlink" href="#method" title="Link to this heading">#</a></h1>
+<p>The first stage in the timeseries simulation part of this tool consists of creating a balanced power system model for each hour. The model is given a set of hourly values representing demand factor of peak, wind capacity factor and solar capacity factor. Each hour seeks to maximize the amount of solar and wind generation dispatch with respect to demand until convergence is reached. In doing so, a general dispatch priority order is utilized rather than a detailed economic dispatch. For example, if wind and solar generation only fills 10% of demand, battery storage is dispatched next, followed by interconnectors, followed by gas generators. Likewise, if wind and solar generation is high, battery storage will import, interconnectors can export, and conventional generators will be set to their minimum levels.</p>
 <p><img alt="ECP GSS" src="_images/Dungarvan_area.png" /></p>
 </section>
 
@@ -442,6 +459,23 @@ document.write(`
             </div>
             
             
+              
+                <div class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+  <div class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> Contents
+  </div>
+  <nav class="bd-toc-nav page-toc">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#">Hourly Timeseries Simulation</a></li>
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#method">Method</a></li>
+</ul>
+
+  </nav></div>
+
+</div></div>
               
             
           </div>

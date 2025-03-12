@@ -6,5 +6,5 @@ root: intro
 chapters:
 - file: Power Flow and Contingency Outline.ipynb
 - file: Case Study.ipynb
-- file: ECP GSS.ipynb
+- file: Hourly Timeseries Simulation.ipynb
 - file: Sources.ipynb

@@ -184,6 +184,7 @@
 <li class="toctree-l1"><a class="reference internal" href="Case%20Study.html">Case Study</a></li>
 <li class="toctree-l1 current active"><a class="current reference internal" href="#">Hourly Timeseries Simulation</a></li>
 
+
 <li class="toctree-l1"><a class="reference internal" href="Sources.html">Sources</a></li>
 </ul>
 
@@ -382,6 +383,7 @@ document.write(`
                 <ul class="visible nav section-nav flex-column">
 <li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#">Hourly Timeseries Simulation</a></li>
 <li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#method">Method</a></li>
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#output">Output</a></li>
 </ul>
 
             </nav>
@@ -405,7 +407,10 @@ document.write(`
 <p>This leaves room for edits, but keeps the focus on hourly load flow and realistic system dispatch. If the user would like specific battery storage projects with duration of 8 hours and others with 4 hour duration, they are able to incorporate that. Currently the script operates dispatching all battery storage uniformly, charging when renewable generation is high and discharging when renewables are low. This is another area that can be modified, if specific projects seek to dispatch based on local generation/demand rather than central system-wide dispatch. Likewise, edits can be made for specifc large energy users even though the currently operation assumes uniform demand behavior according to the system wide hourly demand factor.</p>
 <p>A balanced and converged network model is created for each hour at a rate of roughly 1463 hours (~2 months) in under 25 minutes using standard AC newton raphson powerflow solutions.</p>
 <p>After the dispatch balancing is completed for each network model, the nodal analysis begins. Contingency analysis is completed for each hour, identifying the worst case contingency for each branch in the system greater or equal to 110kV. For each branch that experiences a worst case contingency greater than a user-defined “overload threshold”, shift factors are gathered and aggregated according to each bus. In doing this, the user can determine which nodes have a greater contribution to all worst case overloads for each hour in the simulation. There are two functional ways to complete this, either by AC powerflow intact and contingency analysis, or AC power flow intact with DC LODF approximation for the contingency analysis. The latter being the most time efficient, processing 2 months of hourly data in 2-3 hours.</p>
-<p><img alt="ECP GSS" src="_images/Dungarvan_area.png" /></p>
+</section>
+<section class="tex2jax_ignore mathjax_ignore" id="output">
+<h1>Output<a class="headerlink" href="#output" title="Link to this heading">#</a></h1>
+<p><img alt="ECP GSS" src="_images/South_IRL.png" /></p>
 </section>
 
     <script type="text/x-thebe-config">
@@ -474,6 +479,7 @@ document.write(`
     <ul class="visible nav section-nav flex-column">
 <li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#">Hourly Timeseries Simulation</a></li>
 <li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#method">Method</a></li>
+<li class="toc-h1 nav-item toc-entry"><a class="reference internal nav-link" href="#output">Output</a></li>
 </ul>
 
   </nav></div>

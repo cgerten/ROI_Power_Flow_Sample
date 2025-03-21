@@ -15,6 +15,9 @@ altair = "^5.4.1"
 plotly = "^5.24.0"
 ghp-import = "^2.1.0"
 vega-datasets = "^0.9.0"
+ipywidgets = "^8.1.5"
+ipysheet = "^0.7.0"
+notebook = "^7.3.3"
 
 
 [build-system]

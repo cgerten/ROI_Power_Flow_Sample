@@ -18,11 +18,13 @@ Traceback (most recent call last):
     raise CellExecutionError.from_cell_and_msg(cell, exec_reply_content)
 nbclient.exceptions.CellExecutionError: An error occurred while executing the following cell:
 ------------------
-import pandas as pd
 import numpy as np
+import pandas as pd
 import pandapower as pp
 import plotly.graph_objects as go
-from dash import Dash, dcc, html, Input, Output
+
+# Optional: Uncomment to disable numba warnings (or install numba in your poetry environment)
+# pp.options.numba = False
 
 PF_SETTINGS = {
     "algorithm": "nr",
@@ -37,331 +39,245 @@ PF_SETTINGS = {
 }
 
 # =============================================================================
-# Helper Functions for Color Mapping
+# 1. Load or Create the pandapower Network
 # =============================================================================
+try:
+    net = pp.from_pickle("adjusted_network_1162.p")
+    print("Loaded adjusted_network_1162.p")
+except Exception as e:
+    print("Could not load 'adjusted_network_1162.p'. Creating a demo network. Error:", e)
+    net = pp.create_empty_network()
+    b1 = pp.create_bus(net, vn_kv=110, name="Bus A")
+    b2 = pp.create_bus(net, vn_kv=110, name="Bus B")
+    b3 = pp.create_bus(net, vn_kv=110, name="Bus C")
+    pp.create_line(net, from_bus=b1, to_bus=b2, length_km=10, std_type="149-AL1/24-ST1A 110.0")
+    pp.create_line(net, from_bus=b2, to_bus=b3, length_km=15, std_type="149-AL1/24-ST1A 110.0")
 
-def get_interpolated_color(value, min_val, max_val):
-    """Returns an RGB string based on linear interpolation between min and max values.
-    As the value increases, the red component increases and blue decreases."""
-    # Ensure value is within the specified range
-    value_clamped = min(max(value, min_val), max_val)
-    # Map value to a 0-1 range
-    frac = (value_clamped - min_val) / (max_val - min_val)
-    red = int(255 * frac)
-    blue = int(255 * (1 - frac))
-    return f'rgb({red}, 0, {blue})'
+net.bus["in_service"] = True
+net.line["in_service"] = True
+
+pp.runpp(net, **PF_SETTINGS)
+print("Load flow complete.")
 
 # =============================================================================
-# Figure Function: Standard Load Flow Plot
+# 2. Bus Filtering (Using Original Script Logic)
 # =============================================================================
+if "geodata" in net.bus.columns:
+    filtered_buses = net.bus[
+        (net.bus["vn_kv"] >= 110) &
+        (net.bus["in_service"] == True) &
+        (net.bus["x1"] > 0) &
+        (net.bus["y1"] > 0)
+    ].copy()
+    filtered_buses["x1"] = filtered_buses["x1"]
+    filtered_buses["y1"] = filtered_buses["y1"]
+else:
+    filtered_buses = net.bus[(net.bus["vn_kv"] >= 110) & (net.bus["in_service"] == True)].copy()
+    np.random.seed(42)
+    filtered_buses["x1"] = np.random.uniform(0, 100, size=len(filtered_buses))
+    filtered_buses["y1"] = np.random.uniform(0, 100, size=len(filtered_buses))
 
-def create_standard_loadflow_figure(net):
-    """
-    This function runs a standard load flow on the provided pandapower network,
-    extracts bus and line results, and then creates an interactive plotly figure.
-    The buses are colored by their voltage magnitude and lines are colored based
-    on the loading percentage.
-    """
-    # Run the power flow simulation
-    pp.runpp(net, **PF_SETTINGS)
+# Create a DataFrame similar to the original "relevant_bus"
+relevant_bus = pd.DataFrame({
+    "index": filtered_buses.index,
+    "x1": filtered_buses["x1"],
+    "y1": filtered_buses["y1"],
+    "bus_names": filtered_buses["bus_names"]
+})
+bus_ids = relevant_bus["index"].tolist()
 
+# =============================================================================
+# 3. Line Filtering (Using Original Script Logic)
+# =============================================================================
+filtered_lines = net.line[net.line["in_service"] == True].copy()
+filtered_lines = filtered_lines[
+    filtered_lines["from_bus"].isin(bus_ids) & 
+    filtered_lines["to_bus"].isin(bus_ids)
+]
 
-    # Ensure that bus coordinates exist.
-    # We assume that net.bus contains columns 'name', and optionally 'x' and 'y'
-    buses = net.bus.copy()
-    if 'x' not in buses.columns or 'y' not in buses.columns:
-        # If not, assign dummy coordinates (e.g. using random positions for demonstration)
-        np.random.seed(42)
-        buses['x'] = np.random.uniform(0, 100, size=len(buses))
-        buses['y'] = np.random.uniform(0, 100, size=len(buses))
+results = filtered_lines.copy()
+results["loading_percent"] = net.res_line["loading_percent"]
+results["p_from_mw"] = net.res_line["p_from_mw"]
+results["name"] = results["name"].fillna("Unnamed Line")
 
-    # Create a lookup dictionary: bus name -> (x, y)
-    bus_coords = {row['name']: (row['x'], row['y']) for i, row in buses.iterrows()}
+# =============================================================================
+# 4. Load Global Contingency Aggregator Data and Build Lookup
+# =============================================================================
+global_contingency_df = pd.read_csv("global_contingency_aggregator_June_Sept.csv")
+def normalize_name(name):
+    return " ".join(str(name).split()).strip().lower()
 
-    # Prepare the figure
+cont_map = {}
+for i, row_c in global_contingency_df.iterrows():
+    bname = normalize_name(row_c["Branch_Name"])
+    max_post_flow = row_c["Max_Post_Contingency_Flow_Percent"]
+    worst_outage = row_c["Worst_Case_Outage_For_Max"]
+    cont_map[bname] = (max_post_flow, worst_outage)
+default_cont_data = ("N/A", "No data")
+
+# =============================================================================
+# 5. Load Bus Aggregator Data from bus_lodf_aggregator_June_Sept.csv
+# =============================================================================
+try:
+    bus_lodf_df = pd.read_csv("bus_lodf_aggregator_June_Sept.csv")
+    def normalize_bus_name(name):
+        return " ".join(str(name).split()).lower()
+    bus_lodf_df["Normalized_Bus_Name"] = bus_lodf_df["Bus_Name"].apply(normalize_bus_name)
+    
+    best_list = []
+    for idx, row in relevant_bus.iterrows():
+        bus_name = row["bus_names"]
+        norm_bus_name = normalize_bus_name(bus_name)
+        match = bus_lodf_df[bus_lodf_df["Normalized_Bus_Name"] == norm_bus_name]
+        if not match.empty:
+            cumulative_otdf = match.iloc[0]["Cumulative_OTDF"]
+            maximum_otdf = match.iloc[0]["Maximum_OTDF"]
+        else:
+            cumulative_otdf = np.nan
+            maximum_otdf = np.nan
+        best_list.append({
+            "Bus_ID": row["index"],
+            "PTDF_Sum": cumulative_otdf,
+            "LODF_Percentile": maximum_otdf
+        })
+    best_results_full_discharge = pd.DataFrame(best_list)
+    print("Loaded bus-level aggregator data.")
+except Exception as e:
+    print("Error loading bus_lodf_aggregator_June_Sept.csv, using dummy data:", e)
+    best_results_full_discharge = pd.DataFrame({
+        "Bus_ID": relevant_bus["index"],
+        "PTDF_Sum": np.random.uniform(0, 100, size=len(relevant_bus)),
+        "LODF_Percentile": np.random.uniform(0, 100, size=len(relevant_bus))
+    })
+
+contingency_trigger = True
+
+# =============================================================================
+# 6. Plotting Function (plot_network)
+# =============================================================================
+def plot_network(relevant_bus, results, bus_ids, best_results_full_discharge, cont_map, contingency_trigger=True):
     fig = go.Figure()
-
-    # =============================================================================
-    # Plot Bus Markers
-    # =============================================================================
-    # We use voltage magnitude (vm_pu) from res_bus to color-code the buses.
-    for i, bus in buses.iterrows():
-        x, y = bus['x'], bus['y']
-        bus_name = bus['name']
-        # Get voltage from the load flow results (default to 1.0 if missing)
-        voltage = net.res_bus.loc[i, 'vm_pu'] if i in net.res_bus.index else 1.0
-        # Add a marker for the bus with a colorscale based on voltage
-        fig.add_trace(go.Scatter(
+    
+    # Build nodal aggregated dictionary.
+    best_results_discharge_dict = {}
+    for i, row in best_results_full_discharge.iterrows():
+        bus_id = row["Bus_ID"]
+        best_results_discharge_dict[bus_id] = (row["PTDF_Sum"], row["LODF_Percentile"])
+    
+    # Updated helper functions with NaN checks.
+    def get_line_color(val, min_val=0, max_val=100):
+        if pd.isna(val):
+            return "rgba(128,128,128,1)"
+        frac = np.interp(val, [min_val, max_val], [0, 1])
+        red = int(255 * frac)
+        blue = int(255 * (1 - frac))
+        return f"rgba({red}, 0, {blue}, 1)"
+    
+    def get_node_color(val, min_val=0, max_val=100):
+        if pd.isna(val):
+            return "rgba(128,128,128,1)"
+        frac = np.interp(val, [min_val, max_val], [0, 1])
+        red = int(255 * frac)
+        blue = int(255 * (1 - frac))
+        return f"rgba({red}, 0, {blue}, 1)"
+    
+    # Build adjusted coordinates: key = bus ID, value = (x, y, bus name)
+    adjusted_coords = {
+        row["index"]: (float(row["x1"]), float(row["y1"]), row["bus_names"])
+        for i, row in relevant_bus.iterrows() if pd.notna(row["x1"]) and pd.notna(row["y1"])
+    }
+    
+    annotations = []
+    traces = []
+    
+    # Plot buses.
+    for bus_id, (x, y, bname) in adjusted_coords.items():
+        ptdf_sum, lodf_pct = best_results_discharge_dict.get(bus_id, ("N/A", "N/A"))
+        default_color = "rgba(128,128,128,1)"
+        node_color = default_color
+        if isinstance(lodf_pct, (int, float)):
+            node_color = get_node_color(lodf_pct)
+        text_node = f"PTDF Sum: {ptdf_sum}, LODF: {lodf_pct}"
+        traces.append(go.Scatter(
             x=[x], y=[y],
-            mode='markers+text',
-            text=[bus_name],
-            textposition='top center',
-            marker=dict(
-                size=12,
-                color=voltage,
-                colorscale='Viridis',
-                colorbar=dict(title="Voltage (p.u.)")
-            ),
-            hovertemplate=(f"Bus: {bus_name}<br>"
-                           f"Voltage: {voltage:.3f} p.u.<br>"
-                           f"Coordinates: ({x:.1f}, {y:.1f})"),
-            name=bus_name
+            mode="markers",
+            text=[text_node],
+            hoverinfo="text",
+            marker=dict(size=10, color=default_color),
+            name=f"Bus {bus_id}"
         ))
-
-    # =============================================================================
-    # Plot Lines with Flow Data and Direction Arrows
-    # =============================================================================
-    # The line data is available in net.line and the simulation results are in net.res_line.
-    for idx, line in net.line.iterrows():
-        # Extract from_bus and to_bus indices
-        from_bus = line['from_bus']
-        to_bus = line['to_bus']
-        # Retrieve corresponding bus names (assuming they are uniquely defined)
-        from_name = net.bus.loc[from_bus, 'name']
-        to_name = net.bus.loc[to_bus, 'name']
-
-        from_coords = bus_coords.get(from_name)
-        to_coords = bus_coords.get(to_name)
-        if from_coords is None or to_coords is None:
-            continue  # Skip if coordinates cannot be found
-
-        # Use the loading percentage for color mapping
-        loading = net.res_line.loc[idx, 'loading_percent']
-        line_color = get_interpolated_color(loading, 0, 100)
-
-        # Plot the line between the two buses
-        fig.add_trace(go.Scatter(
+        annotations.append(dict(
+            x=x, y=y, text=bname, showarrow=False,
+            font=dict(size=10, color="#ffffff"), bgcolor=node_color, opacity=0.8
+        ))
+    
+    # Plot lines.
+    for _, r_row in results.iterrows():
+        loading_percent = r_row["loading_percent"]
+        if pd.isna(loading_percent) or loading_percent == 0:
+            continue
+        if (r_row["from_bus"] not in adjusted_coords) or (r_row["to_bus"] not in adjusted_coords):
+            continue
+        from_coords = adjusted_coords[r_row["from_bus"]]
+        to_coords = adjusted_coords[r_row["to_bus"]]
+        
+        line_name = str(r_row["name"])
+        norm_line_name = normalize_name(line_name)
+        cont_loading, cause_name = cont_map.get(norm_line_name, default_cont_data) if contingency_trigger else ("N/A", "No data")
+        line_color = get_line_color(loading_percent)
+        
+        traces.append(go.Scatter(
             x=[from_coords[0], to_coords[0]],
             y=[from_coords[1], to_coords[1]],
-            mode='lines',
-            line=dict(color=line_color, width=4),
-            hovertemplate=(f"Line: {from_name} to {to_name}<br>"
-                           f"Loading: {loading:.1f}%"),
-            name=f"Line {from_name}-{to_name}"
+            mode="lines", line=dict(color=line_color, width=3),
+            hoverinfo="none"
         ))
-
-        # Compute mid-point for placing an arrow to indicate flow direction
         mid_x = (from_coords[0] + to_coords[0]) / 2
         mid_y = (from_coords[1] + to_coords[1]) / 2
-
-        # Determine arrow direction based on p_from_mw (if positive: from from_bus to to_bus)
-        p_from_mw = net.res_line.loc[idx, 'p_from_mw']
-        arrow = dict(
-            x=to_coords[0] if p_from_mw >= 0 else from_coords[0],
-            y=to_coords[1] if p_from_mw >= 0 else from_coords[1],
-            ax=from_coords[0] if p_from_mw >= 0 else to_coords[0],
-            ay=from_coords[1] if p_from_mw >= 0 else to_coords[1],
-            xref="x", yref="y", axref="x", ayref="y",
-            showarrow=True, arrowhead=2, arrowsize=1, arrowwidth=2,
-            arrowcolor=line_color
-        )
-        fig.add_annotation(arrow)
-
-    # =============================================================================
-    # Layout Adjustments
-    # =============================================================================
-    fig.update_layout(
-        title="Standard Load Flow Results",
-        xaxis_title="X Coordinate",
-        yaxis_title="Y Coordinate",
-        yaxis=dict(scaleanchor="x", scaleratio=1),
-        hovermode="closest",
-        width=1000, height=800
-    )
-
-    return fig
-
-# =============================================================================
-# Figure Function: Contingency Analysis Plot
-# =============================================================================
-
-def create_contingency_figure(net, branch_csv, bus_csv):
-    """
-    This function loads contingency analysis results from CSV files for branches and buses.
-    It then creates a plot where:
-      - For each branch (circuit), a line is plotted between the two terminal buses.
-        The line is color-coded using the 'Max_Post_Contingency_Flow_Percent' value and hover text shows
-        both the maximum post contingency flow and the 'Worst_Case_Outage_For_Max'.
-      - For each bus, a marker is added with hover text detailing the contingency metrics like
-        'Cumulative_OTDF', 'Maximum_OTDF', and 'Worst_Circuit'.
-    """
-    # Load CSV results
-    df_branch = pd.read_csv(branch_csv)
-    df_bus = pd.read_csv(bus_csv)
-
-    # Make sure the pandapower network has coordinates as before
-    buses = net.bus.copy()
-    if 'x' not in buses.columns or 'y' not in buses.columns:
-        np.random.seed(42)
-        buses['x'] = np.random.uniform(0, 100, len(buses))
-        buses['y'] = np.random.uniform(0, 100, len(buses))
-
-    # Create a lookup dictionary: bus name (cleaned) -> (x, y)
-    bus_coords = {}
-    for i, row in buses.iterrows():
-        # Clean the name (remove extraneous quotes/spaces)
-        name_clean = str(row['name']).replace("'", "").strip()
-        bus_coords[name_clean] = (row['x'], row['y'])
-
-    # Initialize the figure
-    fig = go.Figure()
-
-    # =============================================================================
-    # Plot Branch (Circuit) Contingency Data
-    # =============================================================================
-    for i, row in df_branch.iterrows():
-        branch_name = row['Branch_Name']
-        # Assume the branch name is of the form "BusA to BusB" (with possible extra spaces/quotes)
-        parts = branch_name.split("to")
-        if len(parts) != 2:
-            continue  # Skip entries that do not match the expected format
-        bus_from_name = parts[0].replace("'", "").strip()
-        bus_to_name = parts[1].replace("'", "").strip()
-
-        from_coords = bus_coords.get(bus_from_name)
-        to_coords = bus_coords.get(bus_to_name)
-        if from_coords is None or to_coords is None:
-            continue
-
-        # Use the "Max_Post_Contingency_Flow_Percent" value to determine the line color
-        loading = row['Max_Post_Contingency_Flow_Percent']
-        line_color = get_interpolated_color(loading, 0, 150)  # Adjust the max value as needed
-
-        # Add the line trace
-        fig.add_trace(go.Scatter(
-            x=[from_coords[0], to_coords[0]],
-            y=[from_coords[1], to_coords[1]],
-            mode='lines',
-            line=dict(color=line_color, width=4),
-            hovertemplate=(f"Branch: {branch_name}<br>"
-                           f"Max Post-Contingency Flow: {loading:.1f}%<br>"
-                           f"Worst Case Outage: {row['Worst_Case_Outage_For_Max']}"),
-            name=branch_name
-        ))
-
-    # =============================================================================
-    # Plot Bus Contingency Data
-    # =============================================================================
-    for i, row in df_bus.iterrows():
-        bus_name = str(row['Bus_Name']).replace("'", "").strip()
-        coords = bus_coords.get(bus_name)
-        if coords is None:
-            continue
-
-        cumulative_otdf = row['Cumulative_OTDF']
-        maximum_otdf = row['Maximum_OTDF']
-        # Color-code the bus marker using (for example) maximum_otdf
-        marker_color = get_interpolated_color(maximum_otdf, 0, 150)
-        hover_text = (f"Bus: {bus_name}<br>"
-                      f"Cumulative OTDF: {cumulative_otdf}<br>"
-                      f"Maximum OTDF: {maximum_otdf}<br>"
-                      f"Worst Circuit: {row['Worst_Circuit']}")
-        fig.add_trace(go.Scatter(
-            x=[coords[0]], y=[coords[1]],
-            mode='markers+text',
-            text=[bus_name],
-            textposition='top center',
-            marker=dict(
-                size=12,
-                color=marker_color,
-                colorscale='Viridis'
-            ),
-            hovertemplate=hover_text,
-            name=bus_name
-        ))
-
-    # =============================================================================
-    # Layout Adjustments
-    # =============================================================================
-    fig.update_layout(
-        title="Contingency Analysis Results",
-        xaxis_title="X Coordinate",
-        yaxis_title="Y Coordinate",
-        yaxis=dict(scaleanchor="x", scaleratio=1),
-        hovermode="closest",
-        width=1000, height=800
-    )
-
-    return fig
-
-# =============================================================================
-# Dash Application Setup
-# =============================================================================
-
-# Create a Dash app instance
-app = Dash(__name__)
-
-# The layout comprises a title and two tabs:
-#   - Tab 1: Standard Load Flow (using the pandapower model and simulation)
-#   - Tab 2: Contingency Analysis (using CSV results)
-app.layout = html.Div([
-    html.H1("Power System Analysis Tool - Irish High Voltage Transmission"),
-    dcc.Tabs(id="tabs", value="tab-standard", children=[
-         dcc.Tab(label="Standard Load Flow", value="tab-standard"),
-         dcc.Tab(label="Contingency Analysis", value="tab-contingency")
-    ]),
-    html.Div(id="tabs-content")
-])
-
-# Callback to update the displayed tab content
-@app.callback(Output("tabs-content", "children"),
-              Input("tabs", "value"))
-def render_tab_content(tab):
-    if tab == "tab-standard":
-        # ---------------------------------------------------------------------
-        # Load or create the pandapower network model.
-        # Replace this section with your actual network model if available.
-        # Here we try to load from a pickle file; if not found, a dummy network is built.
-        # ---------------------------------------------------------------------
-        try:
-            net = pp.from_pickle("network_model.pkl")
-        except Exception as e:
-            print("Loading network_model.pkl failed; creating a simple demo network.")
-            net = pp.create_empty_network()
-            b1 = pp.create_bus(net, vn_kv=110, name="Timahoe")
-            b2 = pp.create_bus(net, vn_kv=110, name="Coolcor")
-            # Create a simple line (you should replace with your actual network topology)
-            pp.create_line(net, from_bus=b1, to_bus=b2, length_km=10, std_type="149-AL1/24-ST1A 110.0")
-            # Optionally add loads/generators to simulate realistic results
-
-        # Create the standard load flow figure
-        fig_standard = create_standard_loadflow_figure(net)
-        return html.Div([dcc.Graph(figure=fig_standard)])
-    
-    elif tab == "tab-contingency":
-        # ---------------------------------------------------------------------
-        # For contingency analysis, we again need the network for bus locations.
-        # Then we load the CSV files that hold the contingency results.
-        # Ensure the CSV files 'circuit_results.csv' and 'bus_results.csv' are available.
-        # ---------------------------------------------------------------------
-        try:
-            net = pp.from_pickle("adjusted_network_1162.p")
-        except Exception as e:
-            print("adjusted_network_1162.p failed; creating a simple demo network.")
-            net = pp.create_empty_network()
-            b1 = pp.create_bus(net, vn_kv=110, name="Timahoe")
-            b2 = pp.create_bus(net, vn_kv=110, name="Coolcor")
-            pp.create_line(net, from_bus=b1, to_bus=b2, length_km=10, std_type="149-AL1/24-ST1A 110.0")
         
-        # Define the paths to the CSV files.
-        # Adjust these paths if the files are located elsewhere.
-        branch_csv = "global_contingency_aggregator_June_Sept.csv"  # CSV with branch contingency results
-        bus_csv = "bus_lodf_aggregator_June_Sept.csv"           # CSV with bus contingency (LODF) results
-
-        # Create the contingency figure
-        fig_contingency = create_contingency_figure(net, branch_csv, bus_csv)
-        return html.Div([dcc.Graph(figure=fig_contingency)])
+        text_line = (f"Line: {line_name}<br>"
+                     f"Intact loading: {loading_percent:.1f}%<br>"
+                     f"Post-Contingency: {cont_loading}%<br>"
+                     f"Cause: {cause_name}")
+        traces.append(go.Scatter(
+            x=[mid_x], y=[mid_y],
+            mode="markers", marker=dict(size=5, color=line_color),
+            text=[text_line], hoverinfo="text"
+        ))
+        
+        if r_row["p_from_mw"] >= 0:
+            arrow_coords = (to_coords[0], to_coords[1], from_coords[0], from_coords[1])
+        else:
+            arrow_coords = (from_coords[0], from_coords[1], to_coords[0], to_coords[1])
+        annotations.append(dict(
+            x=mid_x, y=mid_y,
+            ax=arrow_coords[2], ay=arrow_coords[3],
+            xref="x", yref="y", axref="x", ayref="y",
+            showarrow=True, arrowhead=2, arrowsize=1, arrowwidth=2, arrowcolor=line_color
+        ))
     
-    else:
-        return html.Div("Tab not found.")
+    fig.add_traces(traces)
+    fig.update_layout(
+        annotations=annotations,
+        title="Network Diagram with Post-Contingency Results",
+        showlegend=False,
+        width=1000,
+        height=800,
+        yaxis=dict(autorange="reversed")
+    )
+    fig.show()
 
 # =============================================================================
-# Main Entry Point
+# 7. Call the Plot Function
 # =============================================================================
-
-if __name__ == '__main__':
-    # Run the Dash app on 0.0.0.0 so it is accessible in the Codespace.
-    app.run(host="0.0.0.0", port=8050, debug=True)
+plot_network(
+    relevant_bus=relevant_bus,
+    results=results,
+    bus_ids=bus_ids,
+    best_results_full_discharge=best_results_full_discharge,
+    cont_map=cont_map,
+    contingency_trigger=True
+)
 
 ------------------
 
@@ -369,11 +285,12 @@ if __name__ == '__main__':
 [0;31m---------------------------------------------------------------------------[0m
 [0;31mModuleNotFoundError[0m                       Traceback (most recent call last)
 Cell [0;32mIn[1], line 3[0m
-[1;32m      1[0m [38;5;28;01mimport[39;00m [38;5;21;01mpandas[39;00m [38;5;28;01mas[39;00m [38;5;21;01mpd[39;00m
-[1;32m      2[0m [38;5;28;01mimport[39;00m [38;5;21;01mnumpy[39;00m [38;5;28;01mas[39;00m [38;5;21;01mnp[39;00m
+[1;32m      1[0m [38;5;28;01mimport[39;00m [38;5;21;01mnumpy[39;00m [38;5;28;01mas[39;00m [38;5;21;01mnp[39;00m
+[1;32m      2[0m [38;5;28;01mimport[39;00m [38;5;21;01mpandas[39;00m [38;5;28;01mas[39;00m [38;5;21;01mpd[39;00m
 [0;32m----> 3[0m [38;5;28;01mimport[39;00m [38;5;21;01mpandapower[39;00m [38;5;28;01mas[39;00m [38;5;21;01mpp[39;00m
 [1;32m      4[0m [38;5;28;01mimport[39;00m [38;5;21;01mplotly[39;00m[38;5;21;01m.[39;00m[38;5;21;01mgraph_objects[39;00m [38;5;28;01mas[39;00m [38;5;21;01mgo[39;00m
-[1;32m      5[0m [38;5;28;01mfrom[39;00m [38;5;21;01mdash[39;00m [38;5;28;01mimport[39;00m Dash, dcc, html, Input, Output
+[1;32m      6[0m [38;5;66;03m# Optional: Uncomment to disable numba warnings (or install numba in your poetry environment)[39;00m
+[1;32m      7[0m [38;5;66;03m# pp.options.numba = False[39;00m
 
 [0;31mModuleNotFoundError[0m: No module named 'pandapower'
 

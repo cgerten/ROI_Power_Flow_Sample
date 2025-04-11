@@ -18,6 +18,7 @@ vega-datasets = "^0.9.0"
 ipywidgets = "^8.1.5"
 ipysheet = "^0.7.0"
 notebook = "^7.3.3"
+numba = "^0.61.2"
 
 
 [build-system]

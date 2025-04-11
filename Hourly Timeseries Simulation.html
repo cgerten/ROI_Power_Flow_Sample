@@ -411,6 +411,370 @@ document.write(`
 <section class="tex2jax_ignore mathjax_ignore" id="output">
 <h1>Output<a class="headerlink" href="#output" title="Link to this heading">#</a></h1>
 <p><img alt="ECP GSS" src="_images/South_IRL.png" /></p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandapower</span> <span class="k">as</span> <span class="nn">pp</span>
+<span class="kn">import</span> <span class="nn">plotly.graph_objects</span> <span class="k">as</span> <span class="nn">go</span>
+<span class="kn">from</span> <span class="nn">dash</span> <span class="kn">import</span> <span class="n">Dash</span><span class="p">,</span> <span class="n">dcc</span><span class="p">,</span> <span class="n">html</span><span class="p">,</span> <span class="n">Input</span><span class="p">,</span> <span class="n">Output</span>
+
+<span class="n">PF_SETTINGS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;algorithm&quot;</span><span class="p">:</span> <span class="s2">&quot;nr&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;max_iteration&quot;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span>
+    <span class="s2">&quot;tolerance_mva&quot;</span><span class="p">:</span> <span class="mf">5e-3</span><span class="p">,</span>
+    <span class="s2">&quot;init&quot;</span><span class="p">:</span> <span class="s2">&quot;dc&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;enforce_q_lims&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="s2">&quot;calculate_voltage_angles&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="s2">&quot;logging&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="s2">&quot;voltage_depend_loads&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="s2">&quot;v_debug&quot;</span><span class="p">:</span> <span class="kc">True</span>
+<span class="p">}</span>
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Helper Functions for Color Mapping</span>
+<span class="c1"># =============================================================================</span>
+
+<span class="k">def</span> <span class="nf">get_interpolated_color</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">min_val</span><span class="p">,</span> <span class="n">max_val</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns an RGB string based on linear interpolation between min and max values.</span>
+<span class="sd">    As the value increases, the red component increases and blue decreases.&quot;&quot;&quot;</span>
+    <span class="c1"># Ensure value is within the specified range</span>
+    <span class="n">value_clamped</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">min_val</span><span class="p">),</span> <span class="n">max_val</span><span class="p">)</span>
+    <span class="c1"># Map value to a 0-1 range</span>
+    <span class="n">frac</span> <span class="o">=</span> <span class="p">(</span><span class="n">value_clamped</span> <span class="o">-</span> <span class="n">min_val</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">max_val</span> <span class="o">-</span> <span class="n">min_val</span><span class="p">)</span>
+    <span class="n">red</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">255</span> <span class="o">*</span> <span class="n">frac</span><span class="p">)</span>
+    <span class="n">blue</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">255</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">frac</span><span class="p">))</span>
+    <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;rgb(</span><span class="si">{</span><span class="n">red</span><span class="si">}</span><span class="s1">, 0, </span><span class="si">{</span><span class="n">blue</span><span class="si">}</span><span class="s1">)&#39;</span>
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Figure Function: Standard Load Flow Plot</span>
+<span class="c1"># =============================================================================</span>
+
+<span class="k">def</span> <span class="nf">create_standard_loadflow_figure</span><span class="p">(</span><span class="n">net</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function runs a standard load flow on the provided pandapower network,</span>
+<span class="sd">    extracts bus and line results, and then creates an interactive plotly figure.</span>
+<span class="sd">    The buses are colored by their voltage magnitude and lines are colored based</span>
+<span class="sd">    on the loading percentage.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Run the power flow simulation</span>
+    <span class="n">pp</span><span class="o">.</span><span class="n">runpp</span><span class="p">(</span><span class="n">net</span><span class="p">,</span> <span class="o">**</span><span class="n">PF_SETTINGS</span><span class="p">)</span>
+
+
+    <span class="c1"># Ensure that bus coordinates exist.</span>
+    <span class="c1"># We assume that net.bus contains columns &#39;name&#39;, and optionally &#39;x&#39; and &#39;y&#39;</span>
+    <span class="n">buses</span> <span class="o">=</span> <span class="n">net</span><span class="o">.</span><span class="n">bus</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="k">if</span> <span class="s1">&#39;x&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">buses</span><span class="o">.</span><span class="n">columns</span> <span class="ow">or</span> <span class="s1">&#39;y&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">buses</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+        <span class="c1"># If not, assign dummy coordinates (e.g. using random positions for demonstration)</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+        <span class="n">buses</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">buses</span><span class="p">))</span>
+        <span class="n">buses</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">buses</span><span class="p">))</span>
+
+    <span class="c1"># Create a lookup dictionary: bus name -&gt; (x, y)</span>
+    <span class="n">bus_coords</span> <span class="o">=</span> <span class="p">{</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]:</span> <span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">],</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">buses</span><span class="o">.</span><span class="n">iterrows</span><span class="p">()}</span>
+
+    <span class="c1"># Prepare the figure</span>
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">()</span>
+
+    <span class="c1"># =============================================================================</span>
+    <span class="c1"># Plot Bus Markers</span>
+    <span class="c1"># =============================================================================</span>
+    <span class="c1"># We use voltage magnitude (vm_pu) from res_bus to color-code the buses.</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">bus</span> <span class="ow">in</span> <span class="n">buses</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+        <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">bus</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">],</span> <span class="n">bus</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">]</span>
+        <span class="n">bus_name</span> <span class="o">=</span> <span class="n">bus</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span>
+        <span class="c1"># Get voltage from the load flow results (default to 1.0 if missing)</span>
+        <span class="n">voltage</span> <span class="o">=</span> <span class="n">net</span><span class="o">.</span><span class="n">res_bus</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="s1">&#39;vm_pu&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">net</span><span class="o">.</span><span class="n">res_bus</span><span class="o">.</span><span class="n">index</span> <span class="k">else</span> <span class="mf">1.0</span>
+        <span class="c1"># Add a marker for the bus with a colorscale based on voltage</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span><span class="n">go</span><span class="o">.</span><span class="n">Scatter</span><span class="p">(</span>
+            <span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="n">x</span><span class="p">],</span> <span class="n">y</span><span class="o">=</span><span class="p">[</span><span class="n">y</span><span class="p">],</span>
+            <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;markers+text&#39;</span><span class="p">,</span>
+            <span class="n">text</span><span class="o">=</span><span class="p">[</span><span class="n">bus_name</span><span class="p">],</span>
+            <span class="n">textposition</span><span class="o">=</span><span class="s1">&#39;top center&#39;</span><span class="p">,</span>
+            <span class="n">marker</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+                <span class="n">size</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span>
+                <span class="n">color</span><span class="o">=</span><span class="n">voltage</span><span class="p">,</span>
+                <span class="n">colorscale</span><span class="o">=</span><span class="s1">&#39;Viridis&#39;</span><span class="p">,</span>
+                <span class="n">colorbar</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">&quot;Voltage (p.u.)&quot;</span><span class="p">)</span>
+            <span class="p">),</span>
+            <span class="n">hovertemplate</span><span class="o">=</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Bus: </span><span class="si">{</span><span class="n">bus_name</span><span class="si">}</span><span class="s2">&lt;br&gt;&quot;</span>
+                           <span class="sa">f</span><span class="s2">&quot;Voltage: </span><span class="si">{</span><span class="n">voltage</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2"> p.u.&lt;br&gt;&quot;</span>
+                           <span class="sa">f</span><span class="s2">&quot;Coordinates: (</span><span class="si">{</span><span class="n">x</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">y</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">),</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">bus_name</span>
+        <span class="p">))</span>
+
+    <span class="c1"># =============================================================================</span>
+    <span class="c1"># Plot Lines with Flow Data and Direction Arrows</span>
+    <span class="c1"># =============================================================================</span>
+    <span class="c1"># The line data is available in net.line and the simulation results are in net.res_line.</span>
+    <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">net</span><span class="o">.</span><span class="n">line</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+        <span class="c1"># Extract from_bus and to_bus indices</span>
+        <span class="n">from_bus</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="s1">&#39;from_bus&#39;</span><span class="p">]</span>
+        <span class="n">to_bus</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="s1">&#39;to_bus&#39;</span><span class="p">]</span>
+        <span class="c1"># Retrieve corresponding bus names (assuming they are uniquely defined)</span>
+        <span class="n">from_name</span> <span class="o">=</span> <span class="n">net</span><span class="o">.</span><span class="n">bus</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">from_bus</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">]</span>
+        <span class="n">to_name</span> <span class="o">=</span> <span class="n">net</span><span class="o">.</span><span class="n">bus</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">to_bus</span><span class="p">,</span> <span class="s1">&#39;name&#39;</span><span class="p">]</span>
+
+        <span class="n">from_coords</span> <span class="o">=</span> <span class="n">bus_coords</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">from_name</span><span class="p">)</span>
+        <span class="n">to_coords</span> <span class="o">=</span> <span class="n">bus_coords</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">to_name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">from_coords</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">to_coords</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">continue</span>  <span class="c1"># Skip if coordinates cannot be found</span>
+
+        <span class="c1"># Use the loading percentage for color mapping</span>
+        <span class="n">loading</span> <span class="o">=</span> <span class="n">net</span><span class="o">.</span><span class="n">res_line</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">idx</span><span class="p">,</span> <span class="s1">&#39;loading_percent&#39;</span><span class="p">]</span>
+        <span class="n">line_color</span> <span class="o">=</span> <span class="n">get_interpolated_color</span><span class="p">(</span><span class="n">loading</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+
+        <span class="c1"># Plot the line between the two buses</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span><span class="n">go</span><span class="o">.</span><span class="n">Scatter</span><span class="p">(</span>
+            <span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="n">from_coords</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">to_coords</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span>
+            <span class="n">y</span><span class="o">=</span><span class="p">[</span><span class="n">from_coords</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">to_coords</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span>
+            <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;lines&#39;</span><span class="p">,</span>
+            <span class="n">line</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="n">line_color</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">4</span><span class="p">),</span>
+            <span class="n">hovertemplate</span><span class="o">=</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Line: </span><span class="si">{</span><span class="n">from_name</span><span class="si">}</span><span class="s2"> to </span><span class="si">{</span><span class="n">to_name</span><span class="si">}</span><span class="s2">&lt;br&gt;&quot;</span>
+                           <span class="sa">f</span><span class="s2">&quot;Loading: </span><span class="si">{</span><span class="n">loading</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">),</span>
+            <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Line </span><span class="si">{</span><span class="n">from_name</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">to_name</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">))</span>
+
+        <span class="c1"># Compute mid-point for placing an arrow to indicate flow direction</span>
+        <span class="n">mid_x</span> <span class="o">=</span> <span class="p">(</span><span class="n">from_coords</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">to_coords</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="n">mid_y</span> <span class="o">=</span> <span class="p">(</span><span class="n">from_coords</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">to_coords</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="mi">2</span>
+
+        <span class="c1"># Determine arrow direction based on p_from_mw (if positive: from from_bus to to_bus)</span>
+        <span class="n">p_from_mw</span> <span class="o">=</span> <span class="n">net</span><span class="o">.</span><span class="n">res_line</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">idx</span><span class="p">,</span> <span class="s1">&#39;p_from_mw&#39;</span><span class="p">]</span>
+        <span class="n">arrow</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+            <span class="n">x</span><span class="o">=</span><span class="n">to_coords</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">p_from_mw</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">from_coords</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+            <span class="n">y</span><span class="o">=</span><span class="n">to_coords</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="n">p_from_mw</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">from_coords</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+            <span class="n">ax</span><span class="o">=</span><span class="n">from_coords</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">p_from_mw</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">to_coords</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+            <span class="n">ay</span><span class="o">=</span><span class="n">from_coords</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="n">p_from_mw</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">to_coords</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+            <span class="n">xref</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">yref</span><span class="o">=</span><span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="n">axref</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">ayref</span><span class="o">=</span><span class="s2">&quot;y&quot;</span><span class="p">,</span>
+            <span class="n">showarrow</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">arrowhead</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">arrowsize</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">arrowwidth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+            <span class="n">arrowcolor</span><span class="o">=</span><span class="n">line_color</span>
+        <span class="p">)</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">add_annotation</span><span class="p">(</span><span class="n">arrow</span><span class="p">)</span>
+
+    <span class="c1"># =============================================================================</span>
+    <span class="c1"># Layout Adjustments</span>
+    <span class="c1"># =============================================================================</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span>
+        <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Standard Load Flow Results&quot;</span><span class="p">,</span>
+        <span class="n">xaxis_title</span><span class="o">=</span><span class="s2">&quot;X Coordinate&quot;</span><span class="p">,</span>
+        <span class="n">yaxis_title</span><span class="o">=</span><span class="s2">&quot;Y Coordinate&quot;</span><span class="p">,</span>
+        <span class="n">yaxis</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">scaleanchor</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">scaleratio</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+        <span class="n">hovermode</span><span class="o">=</span><span class="s2">&quot;closest&quot;</span><span class="p">,</span>
+        <span class="n">width</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="mi">800</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">fig</span>
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Figure Function: Contingency Analysis Plot</span>
+<span class="c1"># =============================================================================</span>
+
+<span class="k">def</span> <span class="nf">create_contingency_figure</span><span class="p">(</span><span class="n">net</span><span class="p">,</span> <span class="n">branch_csv</span><span class="p">,</span> <span class="n">bus_csv</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    This function loads contingency analysis results from CSV files for branches and buses.</span>
+<span class="sd">    It then creates a plot where:</span>
+<span class="sd">      - For each branch (circuit), a line is plotted between the two terminal buses.</span>
+<span class="sd">        The line is color-coded using the &#39;Max_Post_Contingency_Flow_Percent&#39; value and hover text shows</span>
+<span class="sd">        both the maximum post contingency flow and the &#39;Worst_Case_Outage_For_Max&#39;.</span>
+<span class="sd">      - For each bus, a marker is added with hover text detailing the contingency metrics like</span>
+<span class="sd">        &#39;Cumulative_OTDF&#39;, &#39;Maximum_OTDF&#39;, and &#39;Worst_Circuit&#39;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Load CSV results</span>
+    <span class="n">df_branch</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">branch_csv</span><span class="p">)</span>
+    <span class="n">df_bus</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">bus_csv</span><span class="p">)</span>
+
+    <span class="c1"># Make sure the pandapower network has coordinates as before</span>
+    <span class="n">buses</span> <span class="o">=</span> <span class="n">net</span><span class="o">.</span><span class="n">bus</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="k">if</span> <span class="s1">&#39;x&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">buses</span><span class="o">.</span><span class="n">columns</span> <span class="ow">or</span> <span class="s1">&#39;y&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">buses</span><span class="o">.</span><span class="n">columns</span><span class="p">:</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+        <span class="n">buses</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">buses</span><span class="p">))</span>
+        <span class="n">buses</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">buses</span><span class="p">))</span>
+
+    <span class="c1"># Create a lookup dictionary: bus name (cleaned) -&gt; (x, y)</span>
+    <span class="n">bus_coords</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">buses</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+        <span class="c1"># Clean the name (remove extraneous quotes/spaces)</span>
+        <span class="n">name_clean</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;&#39;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="n">bus_coords</span><span class="p">[</span><span class="n">name_clean</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;x&#39;</span><span class="p">],</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;y&#39;</span><span class="p">])</span>
+
+    <span class="c1"># Initialize the figure</span>
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">()</span>
+
+    <span class="c1"># =============================================================================</span>
+    <span class="c1"># Plot Branch (Circuit) Contingency Data</span>
+    <span class="c1"># =============================================================================</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">df_branch</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+        <span class="n">branch_name</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;Branch_Name&#39;</span><span class="p">]</span>
+        <span class="c1"># Assume the branch name is of the form &quot;BusA to BusB&quot; (with possible extra spaces/quotes)</span>
+        <span class="n">parts</span> <span class="o">=</span> <span class="n">branch_name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;to&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parts</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">continue</span>  <span class="c1"># Skip entries that do not match the expected format</span>
+        <span class="n">bus_from_name</span> <span class="o">=</span> <span class="n">parts</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;&#39;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="n">bus_to_name</span> <span class="o">=</span> <span class="n">parts</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;&#39;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+
+        <span class="n">from_coords</span> <span class="o">=</span> <span class="n">bus_coords</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">bus_from_name</span><span class="p">)</span>
+        <span class="n">to_coords</span> <span class="o">=</span> <span class="n">bus_coords</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">bus_to_name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">from_coords</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">to_coords</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="c1"># Use the &quot;Max_Post_Contingency_Flow_Percent&quot; value to determine the line color</span>
+        <span class="n">loading</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;Max_Post_Contingency_Flow_Percent&#39;</span><span class="p">]</span>
+        <span class="n">line_color</span> <span class="o">=</span> <span class="n">get_interpolated_color</span><span class="p">(</span><span class="n">loading</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">150</span><span class="p">)</span>  <span class="c1"># Adjust the max value as needed</span>
+
+        <span class="c1"># Add the line trace</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span><span class="n">go</span><span class="o">.</span><span class="n">Scatter</span><span class="p">(</span>
+            <span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="n">from_coords</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">to_coords</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span>
+            <span class="n">y</span><span class="o">=</span><span class="p">[</span><span class="n">from_coords</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">to_coords</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span>
+            <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;lines&#39;</span><span class="p">,</span>
+            <span class="n">line</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="n">line_color</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">4</span><span class="p">),</span>
+            <span class="n">hovertemplate</span><span class="o">=</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Branch: </span><span class="si">{</span><span class="n">branch_name</span><span class="si">}</span><span class="s2">&lt;br&gt;&quot;</span>
+                           <span class="sa">f</span><span class="s2">&quot;Max Post-Contingency Flow: </span><span class="si">{</span><span class="n">loading</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">%&lt;br&gt;&quot;</span>
+                           <span class="sa">f</span><span class="s2">&quot;Worst Case Outage: </span><span class="si">{</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;Worst_Case_Outage_For_Max&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">),</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">branch_name</span>
+        <span class="p">))</span>
+
+    <span class="c1"># =============================================================================</span>
+    <span class="c1"># Plot Bus Contingency Data</span>
+    <span class="c1"># =============================================================================</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">df_bus</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
+        <span class="n">bus_name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;Bus_Name&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;&#39;&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="n">coords</span> <span class="o">=</span> <span class="n">bus_coords</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">bus_name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">coords</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="n">cumulative_otdf</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;Cumulative_OTDF&#39;</span><span class="p">]</span>
+        <span class="n">maximum_otdf</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;Maximum_OTDF&#39;</span><span class="p">]</span>
+        <span class="c1"># Color-code the bus marker using (for example) maximum_otdf</span>
+        <span class="n">marker_color</span> <span class="o">=</span> <span class="n">get_interpolated_color</span><span class="p">(</span><span class="n">maximum_otdf</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">150</span><span class="p">)</span>
+        <span class="n">hover_text</span> <span class="o">=</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Bus: </span><span class="si">{</span><span class="n">bus_name</span><span class="si">}</span><span class="s2">&lt;br&gt;&quot;</span>
+                      <span class="sa">f</span><span class="s2">&quot;Cumulative OTDF: </span><span class="si">{</span><span class="n">cumulative_otdf</span><span class="si">}</span><span class="s2">&lt;br&gt;&quot;</span>
+                      <span class="sa">f</span><span class="s2">&quot;Maximum OTDF: </span><span class="si">{</span><span class="n">maximum_otdf</span><span class="si">}</span><span class="s2">&lt;br&gt;&quot;</span>
+                      <span class="sa">f</span><span class="s2">&quot;Worst Circuit: </span><span class="si">{</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;Worst_Circuit&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span><span class="n">go</span><span class="o">.</span><span class="n">Scatter</span><span class="p">(</span>
+            <span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="n">coords</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">y</span><span class="o">=</span><span class="p">[</span><span class="n">coords</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span>
+            <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;markers+text&#39;</span><span class="p">,</span>
+            <span class="n">text</span><span class="o">=</span><span class="p">[</span><span class="n">bus_name</span><span class="p">],</span>
+            <span class="n">textposition</span><span class="o">=</span><span class="s1">&#39;top center&#39;</span><span class="p">,</span>
+            <span class="n">marker</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+                <span class="n">size</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span>
+                <span class="n">color</span><span class="o">=</span><span class="n">marker_color</span><span class="p">,</span>
+                <span class="n">colorscale</span><span class="o">=</span><span class="s1">&#39;Viridis&#39;</span>
+            <span class="p">),</span>
+            <span class="n">hovertemplate</span><span class="o">=</span><span class="n">hover_text</span><span class="p">,</span>
+            <span class="n">name</span><span class="o">=</span><span class="n">bus_name</span>
+        <span class="p">))</span>
+
+    <span class="c1"># =============================================================================</span>
+    <span class="c1"># Layout Adjustments</span>
+    <span class="c1"># =============================================================================</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span>
+        <span class="n">title</span><span class="o">=</span><span class="s2">&quot;Contingency Analysis Results&quot;</span><span class="p">,</span>
+        <span class="n">xaxis_title</span><span class="o">=</span><span class="s2">&quot;X Coordinate&quot;</span><span class="p">,</span>
+        <span class="n">yaxis_title</span><span class="o">=</span><span class="s2">&quot;Y Coordinate&quot;</span><span class="p">,</span>
+        <span class="n">yaxis</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">scaleanchor</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">scaleratio</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+        <span class="n">hovermode</span><span class="o">=</span><span class="s2">&quot;closest&quot;</span><span class="p">,</span>
+        <span class="n">width</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="mi">800</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">fig</span>
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Dash Application Setup</span>
+<span class="c1"># =============================================================================</span>
+
+<span class="c1"># Create a Dash app instance</span>
+<span class="n">app</span> <span class="o">=</span> <span class="n">Dash</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
+
+<span class="c1"># The layout comprises a title and two tabs:</span>
+<span class="c1">#   - Tab 1: Standard Load Flow (using the pandapower model and simulation)</span>
+<span class="c1">#   - Tab 2: Contingency Analysis (using CSV results)</span>
+<span class="n">app</span><span class="o">.</span><span class="n">layout</span> <span class="o">=</span> <span class="n">html</span><span class="o">.</span><span class="n">Div</span><span class="p">([</span>
+    <span class="n">html</span><span class="o">.</span><span class="n">H1</span><span class="p">(</span><span class="s2">&quot;Power System Analysis Tool - Irish High Voltage Transmission&quot;</span><span class="p">),</span>
+    <span class="n">dcc</span><span class="o">.</span><span class="n">Tabs</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="s2">&quot;tabs&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s2">&quot;tab-standard&quot;</span><span class="p">,</span> <span class="n">children</span><span class="o">=</span><span class="p">[</span>
+         <span class="n">dcc</span><span class="o">.</span><span class="n">Tab</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="s2">&quot;Standard Load Flow&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s2">&quot;tab-standard&quot;</span><span class="p">),</span>
+         <span class="n">dcc</span><span class="o">.</span><span class="n">Tab</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="s2">&quot;Contingency Analysis&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="s2">&quot;tab-contingency&quot;</span><span class="p">)</span>
+    <span class="p">]),</span>
+    <span class="n">html</span><span class="o">.</span><span class="n">Div</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="s2">&quot;tabs-content&quot;</span><span class="p">)</span>
+<span class="p">])</span>
+
+<span class="c1"># Callback to update the displayed tab content</span>
+<span class="nd">@app</span><span class="o">.</span><span class="n">callback</span><span class="p">(</span><span class="n">Output</span><span class="p">(</span><span class="s2">&quot;tabs-content&quot;</span><span class="p">,</span> <span class="s2">&quot;children&quot;</span><span class="p">),</span>
+              <span class="n">Input</span><span class="p">(</span><span class="s2">&quot;tabs&quot;</span><span class="p">,</span> <span class="s2">&quot;value&quot;</span><span class="p">))</span>
+<span class="k">def</span> <span class="nf">render_tab_content</span><span class="p">(</span><span class="n">tab</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">tab</span> <span class="o">==</span> <span class="s2">&quot;tab-standard&quot;</span><span class="p">:</span>
+        <span class="c1"># ---------------------------------------------------------------------</span>
+        <span class="c1"># Load or create the pandapower network model.</span>
+        <span class="c1"># Replace this section with your actual network model if available.</span>
+        <span class="c1"># Here we try to load from a pickle file; if not found, a dummy network is built.</span>
+        <span class="c1"># ---------------------------------------------------------------------</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">net</span> <span class="o">=</span> <span class="n">pp</span><span class="o">.</span><span class="n">from_pickle</span><span class="p">(</span><span class="s2">&quot;network_model.pkl&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Loading network_model.pkl failed; creating a simple demo network.&quot;</span><span class="p">)</span>
+            <span class="n">net</span> <span class="o">=</span> <span class="n">pp</span><span class="o">.</span><span class="n">create_empty_network</span><span class="p">()</span>
+            <span class="n">b1</span> <span class="o">=</span> <span class="n">pp</span><span class="o">.</span><span class="n">create_bus</span><span class="p">(</span><span class="n">net</span><span class="p">,</span> <span class="n">vn_kv</span><span class="o">=</span><span class="mi">110</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Timahoe&quot;</span><span class="p">)</span>
+            <span class="n">b2</span> <span class="o">=</span> <span class="n">pp</span><span class="o">.</span><span class="n">create_bus</span><span class="p">(</span><span class="n">net</span><span class="p">,</span> <span class="n">vn_kv</span><span class="o">=</span><span class="mi">110</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Coolcor&quot;</span><span class="p">)</span>
+            <span class="c1"># Create a simple line (you should replace with your actual network topology)</span>
+            <span class="n">pp</span><span class="o">.</span><span class="n">create_line</span><span class="p">(</span><span class="n">net</span><span class="p">,</span> <span class="n">from_bus</span><span class="o">=</span><span class="n">b1</span><span class="p">,</span> <span class="n">to_bus</span><span class="o">=</span><span class="n">b2</span><span class="p">,</span> <span class="n">length_km</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">std_type</span><span class="o">=</span><span class="s2">&quot;149-AL1/24-ST1A 110.0&quot;</span><span class="p">)</span>
+            <span class="c1"># Optionally add loads/generators to simulate realistic results</span>
+
+        <span class="c1"># Create the standard load flow figure</span>
+        <span class="n">fig_standard</span> <span class="o">=</span> <span class="n">create_standard_loadflow_figure</span><span class="p">(</span><span class="n">net</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">html</span><span class="o">.</span><span class="n">Div</span><span class="p">([</span><span class="n">dcc</span><span class="o">.</span><span class="n">Graph</span><span class="p">(</span><span class="n">figure</span><span class="o">=</span><span class="n">fig_standard</span><span class="p">)])</span>
+    
+    <span class="k">elif</span> <span class="n">tab</span> <span class="o">==</span> <span class="s2">&quot;tab-contingency&quot;</span><span class="p">:</span>
+        <span class="c1"># ---------------------------------------------------------------------</span>
+        <span class="c1"># For contingency analysis, we again need the network for bus locations.</span>
+        <span class="c1"># Then we load the CSV files that hold the contingency results.</span>
+        <span class="c1"># Ensure the CSV files &#39;circuit_results.csv&#39; and &#39;bus_results.csv&#39; are available.</span>
+        <span class="c1"># ---------------------------------------------------------------------</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">net</span> <span class="o">=</span> <span class="n">pp</span><span class="o">.</span><span class="n">from_pickle</span><span class="p">(</span><span class="s2">&quot;adjusted_network_1162.p&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;adjusted_network_1162.p failed; creating a simple demo network.&quot;</span><span class="p">)</span>
+            <span class="n">net</span> <span class="o">=</span> <span class="n">pp</span><span class="o">.</span><span class="n">create_empty_network</span><span class="p">()</span>
+            <span class="n">b1</span> <span class="o">=</span> <span class="n">pp</span><span class="o">.</span><span class="n">create_bus</span><span class="p">(</span><span class="n">net</span><span class="p">,</span> <span class="n">vn_kv</span><span class="o">=</span><span class="mi">110</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Timahoe&quot;</span><span class="p">)</span>
+            <span class="n">b2</span> <span class="o">=</span> <span class="n">pp</span><span class="o">.</span><span class="n">create_bus</span><span class="p">(</span><span class="n">net</span><span class="p">,</span> <span class="n">vn_kv</span><span class="o">=</span><span class="mi">110</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Coolcor&quot;</span><span class="p">)</span>
+            <span class="n">pp</span><span class="o">.</span><span class="n">create_line</span><span class="p">(</span><span class="n">net</span><span class="p">,</span> <span class="n">from_bus</span><span class="o">=</span><span class="n">b1</span><span class="p">,</span> <span class="n">to_bus</span><span class="o">=</span><span class="n">b2</span><span class="p">,</span> <span class="n">length_km</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">std_type</span><span class="o">=</span><span class="s2">&quot;149-AL1/24-ST1A 110.0&quot;</span><span class="p">)</span>
+        
+        <span class="c1"># Define the paths to the CSV files.</span>
+        <span class="c1"># Adjust these paths if the files are located elsewhere.</span>
+        <span class="n">branch_csv</span> <span class="o">=</span> <span class="s2">&quot;global_contingency_aggregator_June_Sept.csv&quot;</span>  <span class="c1"># CSV with branch contingency results</span>
+        <span class="n">bus_csv</span> <span class="o">=</span> <span class="s2">&quot;bus_lodf_aggregator_June_Sept.csv&quot;</span>           <span class="c1"># CSV with bus contingency (LODF) results</span>
+
+        <span class="c1"># Create the contingency figure</span>
+        <span class="n">fig_contingency</span> <span class="o">=</span> <span class="n">create_contingency_figure</span><span class="p">(</span><span class="n">net</span><span class="p">,</span> <span class="n">branch_csv</span><span class="p">,</span> <span class="n">bus_csv</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">html</span><span class="o">.</span><span class="n">Div</span><span class="p">([</span><span class="n">dcc</span><span class="o">.</span><span class="n">Graph</span><span class="p">(</span><span class="n">figure</span><span class="o">=</span><span class="n">fig_contingency</span><span class="p">)])</span>
+    
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">html</span><span class="o">.</span><span class="n">Div</span><span class="p">(</span><span class="s2">&quot;Tab not found.&quot;</span><span class="p">)</span>
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Main Entry Point</span>
+<span class="c1"># =============================================================================</span>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="c1"># Run the Dash app on 0.0.0.0 so it is accessible in the Codespace.</span>
+    <span class="n">app</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s2">&quot;0.0.0.0&quot;</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="mi">8050</span><span class="p">,</span> <span class="n">debug</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output traceback highlight-ipythontb notranslate"><div class="highlight"><pre><span></span><span class="gt">---------------------------------------------------------------------------</span>
+<span class="ne">ModuleNotFoundError</span><span class="g g-Whitespace">                       </span>Traceback (most recent call last)
+<span class="n">Cell</span> <span class="n">In</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">line</span> <span class="mi">3</span>
+<span class="g g-Whitespace">      </span><span class="mi">1</span> <span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="g g-Whitespace">      </span><span class="mi">2</span> <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="ne">----&gt; </span><span class="mi">3</span> <span class="kn">import</span> <span class="nn">pandapower</span> <span class="k">as</span> <span class="nn">pp</span>
+<span class="g g-Whitespace">      </span><span class="mi">4</span> <span class="kn">import</span> <span class="nn">plotly.graph_objects</span> <span class="k">as</span> <span class="nn">go</span>
+<span class="g g-Whitespace">      </span><span class="mi">5</span> <span class="kn">from</span> <span class="nn">dash</span> <span class="kn">import</span> <span class="n">Dash</span><span class="p">,</span> <span class="n">dcc</span><span class="p">,</span> <span class="n">html</span><span class="p">,</span> <span class="n">Input</span><span class="p">,</span> <span class="n">Output</span>
+
+<span class="ne">ModuleNotFoundError</span>: No module named &#39;pandapower&#39;
+</pre></div>
+</div>
+</div>
+</div>
 <p><img alt="ECP GSS" src="_images/South_IRL_Circuit.png" />
 <img alt="ECP GSS" src="_images/South_IRL_Node.png" /></p>
 <p>The above results include projects that are energized, contracted, or processing up to ECP-2.5. The study year selected is 2031 with demand scaled appropriately based on latest data in line with the most recent TYTFS. The “Outage Transfer Distribution Factor” is scaled based on the severity of the overload caused by the worst case contingency and aggregated accross each hour of the simulation. If an outage results in a branch loading less than 100%, the OTDF values for each node are not gathered. Similarly, if an outage results in a branch loading higher than 100%, but another outage results in a higher loading on that same branch, then the OTDF values are only gathered for the relevant “worst case contingency”. The user has the ability to edit the overload threshold as well as implement a threshold for OTDF values i.e. the user may want to omit OTDF values less than 0.1 if they are only concerned with the nodes that have a significant contribution to the branch of focus. For the above sample results, there was no threshold used for OTDF values.</p>

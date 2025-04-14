@@ -117,7 +117,7 @@ for i, row_c in global_contingency_df.iterrows():
     max_post_flow = row_c["Max_Post_Contingency_Flow_Percent"]
     worst_outage = row_c["Worst_Case_Outage_For_Max"]
     cont_map[bname] = (med_post_flow,max_post_flow, worst_outage)
-default_cont_data = ("N/A", "No data")
+default_cont_data = ("N/A", "No data", "No data")
 
 # =============================================================================
 # 5. Load Bus Aggregator Data from bus_lodf_aggregator_June_Sept.csv
@@ -316,6 +316,7 @@ display(HTML(fig_html))
 Loaded adjusted_network_1162.p
 ----- stdout -----
 Load flow complete.
+----- stdout -----
 Loaded bus-level aggregator data.
 ------------------
 
@@ -337,17 +338,20 @@ Cell [0;32mIn[3], line 276[0m
 [1;32m    285[0m [38;5;66;03m# Convert the figure to an HTML snippet.[39;00m
 [1;32m    286[0m fig_html [38;5;241m=[39m fig[38;5;241m.[39mto_html(include_plotlyjs[38;5;241m=[39m[38;5;124m"[39m[38;5;124mcdn[39m[38;5;124m"[39m, full_html[38;5;241m=[39m[38;5;28;01mFalse[39;00m)
 
-Cell [0;32mIn[3], line 227[0m, in [0;36mplot_network[0;34m(relevant_bus, results, bus_ids, best_results_full_discharge, cont_map, contingency_trigger)[0m
-[1;32m    225[0m line_name [38;5;241m=[39m [38;5;28mstr[39m(r_row[[38;5;124m"[39m[38;5;124mname[39m[38;5;124m"[39m])
-[1;32m    226[0m norm_line_name [38;5;241m=[39m normalize_name(line_name)
-[0;32m--> 227[0m med_cont_loading, cont_loading, cause_name [38;5;241m=[39m cont_map[38;5;241m.[39mget(norm_line_name, default_cont_data) [38;5;28;01mif[39;00m contingency_trigger [38;5;28;01melse[39;00m ([38;5;124m"[39m[38;5;124mN/A[39m[38;5;124m"[39m, [38;5;124m"[39m[38;5;124mNo data[39m[38;5;124m"[39m)
-[1;32m    228[0m line_color [38;5;241m=[39m get_line_color(loading_percent)
-[1;32m    230[0m traces[38;5;241m.[39mappend(go[38;5;241m.[39mScatter(
-[1;32m    231[0m     x[38;5;241m=[39m[from_coords[[38;5;241m0[39m], to_coords[[38;5;241m0[39m]],
-[1;32m    232[0m     y[38;5;241m=[39m[from_coords[[38;5;241m1[39m], to_coords[[38;5;241m1[39m]],
-[1;32m    233[0m     mode[38;5;241m=[39m[38;5;124m"[39m[38;5;124mlines[39m[38;5;124m"[39m, line[38;5;241m=[39m[38;5;28mdict[39m(color[38;5;241m=[39mline_color, width[38;5;241m=[39m[38;5;241m3[39m),
-[1;32m    234[0m     hoverinfo[38;5;241m=[39m[38;5;124m"[39m[38;5;124mnone[39m[38;5;124m"[39m
-[1;32m    235[0m ))
+Cell [0;32mIn[3], line 241[0m, in [0;36mplot_network[0;34m(relevant_bus, results, bus_ids, best_results_full_discharge, cont_map, contingency_trigger)[0m
+[1;32m    236[0m mid_x [38;5;241m=[39m (from_coords[[38;5;241m0[39m] [38;5;241m+[39m to_coords[[38;5;241m0[39m]) [38;5;241m/[39m [38;5;241m2[39m
+[1;32m    237[0m mid_y [38;5;241m=[39m (from_coords[[38;5;241m1[39m] [38;5;241m+[39m to_coords[[38;5;241m1[39m]) [38;5;241m/[39m [38;5;241m2[39m
+[1;32m    239[0m text_line [38;5;241m=[39m ([38;5;124mf[39m[38;5;124m"[39m[38;5;124mLine: [39m[38;5;132;01m{[39;00mline_name[38;5;132;01m}[39;00m[38;5;124m<br>[39m[38;5;124m"[39m
+[1;32m    240[0m              [38;5;124mf[39m[38;5;124m"[39m[38;5;124mMaximum Intact Loading: [39m[38;5;132;01m{[39;00mloading_percent[38;5;132;01m:[39;00m[38;5;124m.1f[39m[38;5;132;01m}[39;00m[38;5;124m%<br>[39m[38;5;124m"[39m
+[0;32m--> 241[0m              [38;5;124mf[39m[38;5;124m"[39m[38;5;124mMedian Post-Contingency Loading: [39m[38;5;132;43;01m{[39;49;00m[43mmed_cont_loading[49m[38;5;132;43;01m:[39;49;00m[38;5;124;43m.1f[39;49m[38;5;132;43;01m}[39;49;00m[38;5;124m%<br>[39m[38;5;124m"[39m
+[1;32m    242[0m              [38;5;124mf[39m[38;5;124m"[39m[38;5;124mMaximum Post-Contingency Loading: [39m[38;5;132;01m{[39;00mcont_loading[38;5;132;01m:[39;00m[38;5;124m.1f[39m[38;5;132;01m}[39;00m[38;5;124m%<br>[39m[38;5;124m"[39m
+[1;32m    243[0m              [38;5;124mf[39m[38;5;124m"[39m[38;5;124mWorst Contingency Cause Element: [39m[38;5;132;01m{[39;00mcause_name[38;5;132;01m}[39;00m[38;5;124m"[39m)
+[1;32m    244[0m traces[38;5;241m.[39mappend(go[38;5;241m.[39mScatter(
+[1;32m    245[0m     x[38;5;241m=[39m[mid_x], y[38;5;241m=[39m[mid_y],
+[1;32m    246[0m     mode[38;5;241m=[39m[38;5;124m"[39m[38;5;124mmarkers[39m[38;5;124m"[39m, marker[38;5;241m=[39m[38;5;28mdict[39m(size[38;5;241m=[39m[38;5;241m5[39m, color[38;5;241m=[39mline_color),
+[1;32m    247[0m     text[38;5;241m=[39m[text_line], hoverinfo[38;5;241m=[39m[38;5;124m"[39m[38;5;124mtext[39m[38;5;124m"[39m
+[1;32m    248[0m ))
+[1;32m    250[0m [38;5;28;01mif[39;00m r_row[[38;5;124m"[39m[38;5;124mp_from_mw[39m[38;5;124m"[39m] [38;5;241m>[39m[38;5;241m=[39m [38;5;241m0[39m:
 
-[0;31mValueError[0m: not enough values to unpack (expected 3, got 2)
+[0;31mValueError[0m: Unknown format code 'f' for object of type 'str'
 

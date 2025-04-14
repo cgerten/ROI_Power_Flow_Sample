@@ -244,7 +244,7 @@ def plot_network(relevant_bus, results, bus_ids, best_results_full_discharge, co
         
         line_name = str(r_row["name"])
         norm_line_name = normalize_name(line_name)
-        med_cont_loading, cont_loading, cause_name = cont_map.get(norm_line_name, default_cont_data) if contingency_trigger else ("N/A", "No data")
+        med_cont_loading, cont_loading, cause_name = cont_map.get(norm_line_name, default_cont_data) if contingency_trigger else ("N/A", "No data", "No data")
         line_color = get_line_color(loading_percent)
         
         traces.append(go.Scatter(
@@ -316,7 +316,6 @@ display(HTML(fig_html))
 Loaded adjusted_network_1162.p
 ----- stdout -----
 Load flow complete.
------ stdout -----
 Loaded bus-level aggregator data.
 ------------------
 

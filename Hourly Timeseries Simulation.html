@@ -681,7 +681,7 @@ pandapower version: 3.0.0
         
         <span class="n">line_name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">r_row</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">])</span>
         <span class="n">norm_line_name</span> <span class="o">=</span> <span class="n">normalize_name</span><span class="p">(</span><span class="n">line_name</span><span class="p">)</span>
-        <span class="n">med_cont_loading</span><span class="p">,</span> <span class="n">cont_loading</span><span class="p">,</span> <span class="n">cause_name</span> <span class="o">=</span> <span class="n">cont_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">norm_line_name</span><span class="p">,</span> <span class="n">default_cont_data</span><span class="p">)</span> <span class="k">if</span> <span class="n">contingency_trigger</span> <span class="k">else</span> <span class="p">(</span><span class="s2">&quot;N/A&quot;</span><span class="p">,</span> <span class="s2">&quot;No data&quot;</span><span class="p">)</span>
+        <span class="n">med_cont_loading</span><span class="p">,</span> <span class="n">cont_loading</span><span class="p">,</span> <span class="n">cause_name</span> <span class="o">=</span> <span class="n">cont_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">norm_line_name</span><span class="p">,</span> <span class="n">default_cont_data</span><span class="p">)</span> <span class="k">if</span> <span class="n">contingency_trigger</span> <span class="k">else</span> <span class="p">(</span><span class="s2">&quot;N/A&quot;</span><span class="p">,</span> <span class="s2">&quot;No data&quot;</span><span class="p">,</span> <span class="s2">&quot;No data&quot;</span><span class="p">)</span>
         <span class="n">line_color</span> <span class="o">=</span> <span class="n">get_line_color</span><span class="p">(</span><span class="n">loading_percent</span><span class="p">)</span>
         
         <span class="n">traces</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">go</span><span class="o">.</span><span class="n">Scatter</span><span class="p">(</span>
@@ -753,9 +753,7 @@ pandapower version: 3.0.0
 </pre></div>
 </div>
 <div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Load flow complete.
-</pre></div>
-</div>
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Loaded bus-level aggregator data.
+Loaded bus-level aggregator data.
 </pre></div>
 </div>
 <div class="output traceback highlight-ipythontb notranslate"><div class="highlight"><pre><span></span><span class="gt">---------------------------------------------------------------------------</span>

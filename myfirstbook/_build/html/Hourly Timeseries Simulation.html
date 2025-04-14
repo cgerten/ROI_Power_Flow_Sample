@@ -695,7 +695,7 @@ pandapower version: 3.0.0
         
         <span class="n">text_line</span> <span class="o">=</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Line: </span><span class="si">{</span><span class="n">line_name</span><span class="si">}</span><span class="s2">&lt;br&gt;&quot;</span>
                      <span class="sa">f</span><span class="s2">&quot;Maximum Intact Loading: </span><span class="si">{</span><span class="n">loading_percent</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">%&lt;br&gt;&quot;</span>
-                     <span class="sa">f</span><span class="s2">&quot;Median Post-Contingency Loading: </span><span class="si">{</span><span class="n">med_cont_loading</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">%&lt;br&gt;&quot;</span>
+                     <span class="sa">f</span><span class="s2">&quot;Median Post-Contingency Loading: </span><span class="si">{</span><span class="n">med_cont_loading</span><span class="si">}</span><span class="s2">%&lt;br&gt;&quot;</span>
                      <span class="sa">f</span><span class="s2">&quot;Maximum Post-Contingency Loading: </span><span class="si">{</span><span class="n">cont_loading</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">%&lt;br&gt;&quot;</span>
                      <span class="sa">f</span><span class="s2">&quot;Worst Contingency Cause Element: </span><span class="si">{</span><span class="n">cause_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
         <span class="n">traces</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">go</span><span class="o">.</span><span class="n">Scatter</span><span class="p">(</span>
@@ -753,7 +753,9 @@ pandapower version: 3.0.0
 </pre></div>
 </div>
 <div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Load flow complete.
-Loaded bus-level aggregator data.
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Loaded bus-level aggregator data.
 </pre></div>
 </div>
 <div class="output traceback highlight-ipythontb notranslate"><div class="highlight"><pre><span></span><span class="gt">---------------------------------------------------------------------------</span>
@@ -774,13 +776,13 @@ Loaded bus-level aggregator data.
 <span class="g g-Whitespace">    </span><span class="mi">285</span> <span class="c1"># Convert the figure to an HTML snippet.</span>
 <span class="g g-Whitespace">    </span><span class="mi">286</span> <span class="n">fig_html</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">to_html</span><span class="p">(</span><span class="n">include_plotlyjs</span><span class="o">=</span><span class="s2">&quot;cdn&quot;</span><span class="p">,</span> <span class="n">full_html</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
-<span class="nn">Cell In[3], line 241,</span> in <span class="ni">plot_network</span><span class="nt">(relevant_bus, results, bus_ids, best_results_full_discharge, cont_map, contingency_trigger)</span>
+<span class="nn">Cell In[3], line 242,</span> in <span class="ni">plot_network</span><span class="nt">(relevant_bus, results, bus_ids, best_results_full_discharge, cont_map, contingency_trigger)</span>
 <span class="g g-Whitespace">    </span><span class="mi">236</span> <span class="n">mid_x</span> <span class="o">=</span> <span class="p">(</span><span class="n">from_coords</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">to_coords</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">/</span> <span class="mi">2</span>
 <span class="g g-Whitespace">    </span><span class="mi">237</span> <span class="n">mid_y</span> <span class="o">=</span> <span class="p">(</span><span class="n">from_coords</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">to_coords</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">/</span> <span class="mi">2</span>
 <span class="g g-Whitespace">    </span><span class="mi">239</span> <span class="n">text_line</span> <span class="o">=</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Line: </span><span class="si">{</span><span class="n">line_name</span><span class="si">}</span><span class="s2">&lt;br&gt;&quot;</span>
 <span class="g g-Whitespace">    </span><span class="mi">240</span>              <span class="sa">f</span><span class="s2">&quot;Maximum Intact Loading: </span><span class="si">{</span><span class="n">loading_percent</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">%&lt;br&gt;&quot;</span>
-<span class="ne">--&gt; </span><span class="mi">241</span>              <span class="sa">f</span><span class="s2">&quot;Median Post-Contingency Loading: </span><span class="si">{</span><span class="n">med_cont_loading</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">%&lt;br&gt;&quot;</span>
-<span class="g g-Whitespace">    </span><span class="mi">242</span>              <span class="sa">f</span><span class="s2">&quot;Maximum Post-Contingency Loading: </span><span class="si">{</span><span class="n">cont_loading</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">%&lt;br&gt;&quot;</span>
+<span class="g g-Whitespace">    </span><span class="mi">241</span>              <span class="sa">f</span><span class="s2">&quot;Median Post-Contingency Loading: </span><span class="si">{</span><span class="n">med_cont_loading</span><span class="si">}</span><span class="s2">%&lt;br&gt;&quot;</span>
+<span class="ne">--&gt; </span><span class="mi">242</span>              <span class="sa">f</span><span class="s2">&quot;Maximum Post-Contingency Loading: </span><span class="si">{</span><span class="n">cont_loading</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">%&lt;br&gt;&quot;</span>
 <span class="g g-Whitespace">    </span><span class="mi">243</span>              <span class="sa">f</span><span class="s2">&quot;Worst Contingency Cause Element: </span><span class="si">{</span><span class="n">cause_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 <span class="g g-Whitespace">    </span><span class="mi">244</span> <span class="n">traces</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">go</span><span class="o">.</span><span class="n">Scatter</span><span class="p">(</span>
 <span class="g g-Whitespace">    </span><span class="mi">245</span>     <span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="n">mid_x</span><span class="p">],</span> <span class="n">y</span><span class="o">=</span><span class="p">[</span><span class="n">mid_y</span><span class="p">],</span>

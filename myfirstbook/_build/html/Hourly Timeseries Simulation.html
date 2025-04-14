@@ -615,7 +615,7 @@ pandapower version: 3.0.0
     <span class="n">best_results_discharge_dict</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">best_results_full_discharge</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
         <span class="n">bus_id</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;Bus_ID&quot;</span><span class="p">]</span>
-        <span class="n">best_results_discharge_dict</span><span class="p">[</span><span class="n">bus_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;PTDF_Sum&quot;</span><span class="p">],</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;LODF_Percentile&quot;</span><span class="p">])</span>
+        <span class="n">best_results_discharge_dict</span><span class="p">[</span><span class="n">bus_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;cumulative_otdf&quot;</span><span class="p">],</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;maximum_otdf&quot;</span><span class="p">],</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;minimum_otdf&quot;</span><span class="p">],</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;median_otdf&quot;</span><span class="p">],</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;worst_circuit_otdf&quot;</span><span class="p">])</span>
     
     <span class="c1"># Updated helper functions with NaN checks.</span>
     <span class="k">def</span> <span class="nf">get_line_color</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">min_val</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">max_val</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
@@ -757,25 +757,7 @@ Loaded bus-level aggregator data.
 </pre></div>
 </div>
 <div class="output traceback highlight-ipythontb notranslate"><div class="highlight"><pre><span></span><span class="gt">---------------------------------------------------------------------------</span>
-<span class="ne">KeyError</span><span class="g g-Whitespace">                                  </span>Traceback (most recent call last)
-<span class="nn">File ~/.cache/pypoetry/virtualenvs/roi-power-flow-sample-aukJIi7B-py3.12/lib/python3.12/site-packages/pandas/core/indexes/base.py:3805,</span> in <span class="ni">Index.get_loc</span><span class="nt">(self, key)</span>
-<span class="g g-Whitespace">   </span><span class="mi">3804</span> <span class="k">try</span><span class="p">:</span>
-<span class="ne">-&gt; </span><span class="mi">3805</span>     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_engine</span><span class="o">.</span><span class="n">get_loc</span><span class="p">(</span><span class="n">casted_key</span><span class="p">)</span>
-<span class="g g-Whitespace">   </span><span class="mi">3806</span> <span class="k">except</span> <span class="ne">KeyError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
-
-<span class="nn">File index.pyx:167,</span> in <span class="ni">pandas._libs.index.IndexEngine.get_loc</span><span class="nt">()</span>
-
-<span class="nn">File index.pyx:196,</span> in <span class="ni">pandas._libs.index.IndexEngine.get_loc</span><span class="nt">()</span>
-
-<span class="nn">File pandas/_libs/hashtable_class_helper.pxi:7081,</span> in <span class="ni">pandas._libs.hashtable.PyObjectHashTable.get_item</span><span class="nt">()</span>
-
-<span class="nn">File pandas/_libs/hashtable_class_helper.pxi:7089,</span> in <span class="ni">pandas._libs.hashtable.PyObjectHashTable.get_item</span><span class="nt">()</span>
-
-<span class="ne">KeyError</span>: &#39;PTDF_Sum&#39;
-
-<span class="n">The</span> <span class="n">above</span> <span class="n">exception</span> <span class="n">was</span> <span class="n">the</span> <span class="n">direct</span> <span class="n">cause</span> <span class="n">of</span> <span class="n">the</span> <span class="n">following</span> <span class="n">exception</span><span class="p">:</span>
-
-<span class="ne">KeyError</span><span class="g g-Whitespace">                                  </span>Traceback (most recent call last)
+<span class="ne">ValueError</span><span class="g g-Whitespace">                                </span>Traceback (most recent call last)
 <span class="n">Cell</span> <span class="n">In</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="n">line</span> <span class="mi">276</span>
 <span class="g g-Whitespace">    </span><span class="mi">271</span>     <span class="k">return</span> <span class="n">fig</span>
 <span class="g g-Whitespace">    </span><span class="mi">273</span> <span class="c1"># =============================================================================</span>
@@ -792,42 +774,19 @@ Loaded bus-level aggregator data.
 <span class="g g-Whitespace">    </span><span class="mi">285</span> <span class="c1"># Convert the figure to an HTML snippet.</span>
 <span class="g g-Whitespace">    </span><span class="mi">286</span> <span class="n">fig_html</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">to_html</span><span class="p">(</span><span class="n">include_plotlyjs</span><span class="o">=</span><span class="s2">&quot;cdn&quot;</span><span class="p">,</span> <span class="n">full_html</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
-<span class="nn">Cell In[3], line 161,</span> in <span class="ni">plot_network</span><span class="nt">(relevant_bus, results, bus_ids, best_results_full_discharge, cont_map, contingency_trigger)</span>
-<span class="g g-Whitespace">    </span><span class="mi">159</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">best_results_full_discharge</span><span class="o">.</span><span class="n">iterrows</span><span class="p">():</span>
-<span class="g g-Whitespace">    </span><span class="mi">160</span>     <span class="n">bus_id</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;Bus_ID&quot;</span><span class="p">]</span>
-<span class="ne">--&gt; </span><span class="mi">161</span>     <span class="n">best_results_discharge_dict</span><span class="p">[</span><span class="n">bus_id</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;PTDF_Sum&quot;</span><span class="p">],</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;LODF_Percentile&quot;</span><span class="p">])</span>
-<span class="g g-Whitespace">    </span><span class="mi">163</span> <span class="c1"># Updated helper functions with NaN checks.</span>
-<span class="g g-Whitespace">    </span><span class="mi">164</span> <span class="k">def</span> <span class="nf">get_line_color</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">min_val</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">max_val</span><span class="o">=</span><span class="mi">100</span><span class="p">):</span>
+<span class="nn">Cell In[3], line 227,</span> in <span class="ni">plot_network</span><span class="nt">(relevant_bus, results, bus_ids, best_results_full_discharge, cont_map, contingency_trigger)</span>
+<span class="g g-Whitespace">    </span><span class="mi">225</span> <span class="n">line_name</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">r_row</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">])</span>
+<span class="g g-Whitespace">    </span><span class="mi">226</span> <span class="n">norm_line_name</span> <span class="o">=</span> <span class="n">normalize_name</span><span class="p">(</span><span class="n">line_name</span><span class="p">)</span>
+<span class="ne">--&gt; </span><span class="mi">227</span> <span class="n">med_cont_loading</span><span class="p">,</span> <span class="n">cont_loading</span><span class="p">,</span> <span class="n">cause_name</span> <span class="o">=</span> <span class="n">cont_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">norm_line_name</span><span class="p">,</span> <span class="n">default_cont_data</span><span class="p">)</span> <span class="k">if</span> <span class="n">contingency_trigger</span> <span class="k">else</span> <span class="p">(</span><span class="s2">&quot;N/A&quot;</span><span class="p">,</span> <span class="s2">&quot;No data&quot;</span><span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">228</span> <span class="n">line_color</span> <span class="o">=</span> <span class="n">get_line_color</span><span class="p">(</span><span class="n">loading_percent</span><span class="p">)</span>
+<span class="g g-Whitespace">    </span><span class="mi">230</span> <span class="n">traces</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">go</span><span class="o">.</span><span class="n">Scatter</span><span class="p">(</span>
+<span class="g g-Whitespace">    </span><span class="mi">231</span>     <span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="n">from_coords</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">to_coords</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span>
+<span class="g g-Whitespace">    </span><span class="mi">232</span>     <span class="n">y</span><span class="o">=</span><span class="p">[</span><span class="n">from_coords</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">to_coords</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span>
+<span class="g g-Whitespace">    </span><span class="mi">233</span>     <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;lines&quot;</span><span class="p">,</span> <span class="n">line</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="n">line_color</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">3</span><span class="p">),</span>
+<span class="g g-Whitespace">    </span><span class="mi">234</span>     <span class="n">hoverinfo</span><span class="o">=</span><span class="s2">&quot;none&quot;</span>
+<span class="g g-Whitespace">    </span><span class="mi">235</span> <span class="p">))</span>
 
-<span class="nn">File ~/.cache/pypoetry/virtualenvs/roi-power-flow-sample-aukJIi7B-py3.12/lib/python3.12/site-packages/pandas/core/series.py:1121,</span> in <span class="ni">Series.__getitem__</span><span class="nt">(self, key)</span>
-<span class="g g-Whitespace">   </span><span class="mi">1118</span>     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_values</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
-<span class="g g-Whitespace">   </span><span class="mi">1120</span> <span class="k">elif</span> <span class="n">key_is_scalar</span><span class="p">:</span>
-<span class="ne">-&gt; </span><span class="mi">1121</span>     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_value</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
-<span class="g g-Whitespace">   </span><span class="mi">1123</span> <span class="c1"># Convert generator to list before going through hashable part</span>
-<span class="g g-Whitespace">   </span><span class="mi">1124</span> <span class="c1"># (We will iterate through the generator there to check for slices)</span>
-<span class="g g-Whitespace">   </span><span class="mi">1125</span> <span class="k">if</span> <span class="n">is_iterator</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
-
-<span class="nn">File ~/.cache/pypoetry/virtualenvs/roi-power-flow-sample-aukJIi7B-py3.12/lib/python3.12/site-packages/pandas/core/series.py:1237,</span> in <span class="ni">Series._get_value</span><span class="nt">(self, label, takeable)</span>
-<span class="g g-Whitespace">   </span><span class="mi">1234</span>     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_values</span><span class="p">[</span><span class="n">label</span><span class="p">]</span>
-<span class="g g-Whitespace">   </span><span class="mi">1236</span> <span class="c1"># Similar to Index.get_value, but we do not fall back to positional</span>
-<span class="ne">-&gt; </span><span class="mi">1237</span> <span class="n">loc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">get_loc</span><span class="p">(</span><span class="n">label</span><span class="p">)</span>
-<span class="g g-Whitespace">   </span><span class="mi">1239</span> <span class="k">if</span> <span class="n">is_integer</span><span class="p">(</span><span class="n">loc</span><span class="p">):</span>
-<span class="g g-Whitespace">   </span><span class="mi">1240</span>     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_values</span><span class="p">[</span><span class="n">loc</span><span class="p">]</span>
-
-<span class="nn">File ~/.cache/pypoetry/virtualenvs/roi-power-flow-sample-aukJIi7B-py3.12/lib/python3.12/site-packages/pandas/core/indexes/base.py:3812,</span> in <span class="ni">Index.get_loc</span><span class="nt">(self, key)</span>
-<span class="g g-Whitespace">   </span><span class="mi">3807</span>     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">casted_key</span><span class="p">,</span> <span class="nb">slice</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span>
-<span class="g g-Whitespace">   </span><span class="mi">3808</span>         <span class="nb">isinstance</span><span class="p">(</span><span class="n">casted_key</span><span class="p">,</span> <span class="n">abc</span><span class="o">.</span><span class="n">Iterable</span><span class="p">)</span>
-<span class="g g-Whitespace">   </span><span class="mi">3809</span>         <span class="ow">and</span> <span class="nb">any</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">slice</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">casted_key</span><span class="p">)</span>
-<span class="g g-Whitespace">   </span><span class="mi">3810</span>     <span class="p">):</span>
-<span class="g g-Whitespace">   </span><span class="mi">3811</span>         <span class="k">raise</span> <span class="n">InvalidIndexError</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
-<span class="ne">-&gt; </span><span class="mi">3812</span>     <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">err</span>
-<span class="g g-Whitespace">   </span><span class="mi">3813</span> <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
-<span class="g g-Whitespace">   </span><span class="mi">3814</span>     <span class="c1"># If we have a listlike key, _check_indexing_error will raise</span>
-<span class="g g-Whitespace">   </span><span class="mi">3815</span>     <span class="c1">#  InvalidIndexError. Otherwise we fall through and re-raise</span>
-<span class="g g-Whitespace">   </span><span class="mi">3816</span>     <span class="c1">#  the TypeError.</span>
-<span class="g g-Whitespace">   </span><span class="mi">3817</span>     <span class="bp">self</span><span class="o">.</span><span class="n">_check_indexing_error</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
-
-<span class="ne">KeyError</span>: &#39;PTDF_Sum&#39;
+<span class="ne">ValueError</span>: not enough values to unpack (expected 3, got 2)
 </pre></div>
 </div>
 </div>

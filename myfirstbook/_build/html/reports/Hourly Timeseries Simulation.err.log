@@ -22,6 +22,9 @@ import numpy as np
 import pandas as pd
 import pandapower as pp
 import plotly.graph_objects as go
+import plotly.io as pio
+from IPython.display import HTML, display
+
 
 # Optional: Uncomment to disable numba warnings (or install numba in your poetry environment)
 # pp.options.numba = False
@@ -110,9 +113,10 @@ def normalize_name(name):
 cont_map = {}
 for i, row_c in global_contingency_df.iterrows():
     bname = normalize_name(row_c["Branch_Name"])
+    med_post_flow = row_c["Median_Post_Contingency_Flow_Percent"]
     max_post_flow = row_c["Max_Post_Contingency_Flow_Percent"]
     worst_outage = row_c["Worst_Case_Outage_For_Max"]
-    cont_map[bname] = (max_post_flow, worst_outage)
+    cont_map[bname] = (med_post_flow,max_post_flow, worst_outage)
 default_cont_data = ("N/A", "No data")
 
 # =============================================================================
@@ -132,13 +136,22 @@ try:
         if not match.empty:
             cumulative_otdf = match.iloc[0]["Cumulative_OTDF"]
             maximum_otdf = match.iloc[0]["Maximum_OTDF"]
+            minimum_otdf = match.iloc[0]["Minimum_OTDF"]
+            median_otdf = match.iloc[0]["Median_OTDF"]
+            worst_circuit_otdf = match.iloc[0]["Worst_Circuit"]
         else:
             cumulative_otdf = np.nan
             maximum_otdf = np.nan
+            minimum_otdf = np.nan
+            median_otdf = np.nan
+            worst_circuit_otdf = np.nan
         best_list.append({
             "Bus_ID": row["index"],
-            "PTDF_Sum": cumulative_otdf,
-            "LODF_Percentile": maximum_otdf
+            "cumulative_otdf": cumulative_otdf,
+            "maximum_otdf": maximum_otdf,
+            "minimum_otdf": minimum_otdf,
+            "median_otdf": median_otdf,
+            "worst_circuit_otdf": worst_circuit_otdf,
         })
     best_results_full_discharge = pd.DataFrame(best_list)
     print("Loaded bus-level aggregator data.")
@@ -146,8 +159,11 @@ except Exception as e:
     print("Error loading bus_lodf_aggregator_June_Sept.csv, using dummy data:", e)
     best_results_full_discharge = pd.DataFrame({
         "Bus_ID": relevant_bus["index"],
-        "PTDF_Sum": np.random.uniform(0, 100, size=len(relevant_bus)),
-        "LODF_Percentile": np.random.uniform(0, 100, size=len(relevant_bus))
+        "cumulative_otdf": 0,
+        "maximum_otdf": 0,
+        "minimum_otdf": 0,
+        "median_otdf": 0,
+        "worst_circuit_otdf": 0,
     })
 
 contingency_trigger = True
@@ -192,12 +208,17 @@ def plot_network(relevant_bus, results, bus_ids, best_results_full_discharge, co
     
     # Plot buses.
     for bus_id, (x, y, bname) in adjusted_coords.items():
-        ptdf_sum, lodf_pct = best_results_discharge_dict.get(bus_id, ("N/A", "N/A"))
+        ptdf_sum, lodf_pct, min_otdf, med_otdf,worst_circuit = best_results_discharge_dict.get(bus_id, ("N/A", "N/A"))
         default_color = "rgba(128,128,128,1)"
         node_color = default_color
         if isinstance(lodf_pct, (int, float)):
             node_color = get_node_color(lodf_pct)
-        text_node = f"PTDF Sum: {ptdf_sum}, LODF: {lodf_pct}"
+        text_node = (f"Cumulative OTDF Sum: {ptdf_sum:.1f}%<br>"
+                        f"Maximum OTDF: {lodf_pct:.1f}%<br>"
+                        f"Minimum OTDF: {min_otdf:.1f}%<br>"
+                        f"Median OTDF: {med_otdf:.1f}%<br>"
+                        f"Worst Circuit: {worst_circuit}%<br>"
+                    )
         traces.append(go.Scatter(
             x=[x], y=[y],
             mode="markers",
@@ -223,7 +244,7 @@ def plot_network(relevant_bus, results, bus_ids, best_results_full_discharge, co
         
         line_name = str(r_row["name"])
         norm_line_name = normalize_name(line_name)
-        cont_loading, cause_name = cont_map.get(norm_line_name, default_cont_data) if contingency_trigger else ("N/A", "No data")
+        med_cont_loading, cont_loading, cause_name = cont_map.get(norm_line_name, default_cont_data) if contingency_trigger else ("N/A", "No data")
         line_color = get_line_color(loading_percent)
         
         traces.append(go.Scatter(
@@ -236,9 +257,10 @@ def plot_network(relevant_bus, results, bus_ids, best_results_full_discharge, co
         mid_y = (from_coords[1] + to_coords[1]) / 2
         
         text_line = (f"Line: {line_name}<br>"
-                     f"Intact loading: {loading_percent:.1f}%<br>"
-                     f"Post-Contingency: {cont_loading}%<br>"
-                     f"Cause: {cause_name}")
+                     f"Maximum Intact Loading: {loading_percent:.1f}%<br>"
+                     f"Median Post-Contingency Loading: {med_cont_loading:.1f}%<br>"
+                     f"Maximum Post-Contingency Loading: {cont_loading:.1f}%<br>"
+                     f"Worst Contingency Cause Element: {cause_name}")
         traces.append(go.Scatter(
             x=[mid_x], y=[mid_y],
             mode="markers", marker=dict(size=5, color=line_color),
@@ -265,12 +287,13 @@ def plot_network(relevant_bus, results, bus_ids, best_results_full_discharge, co
         height=800,
         yaxis=dict(autorange="reversed")
     )
-    fig.show()
+    #fig.show()
+    return fig
 
 # =============================================================================
 # 7. Call the Plot Function
 # =============================================================================
-plot_network(
+fig = plot_network(
     relevant_bus=relevant_bus,
     results=results,
     bus_ids=bus_ids,
@@ -279,18 +302,93 @@ plot_network(
     contingency_trigger=True
 )
 
+# Convert the figure to an HTML snippet.
+fig_html = fig.to_html(include_plotlyjs="cdn", full_html=False)
+
+# Embed it in the notebook.
+from IPython.display import HTML, display
+display(HTML(fig_html))
+
+
 ------------------
 
+----- stdout -----
+Loaded adjusted_network_1162.p
+----- stdout -----
+Load flow complete.
+Loaded bus-level aggregator data.
+------------------
 
 [0;31m---------------------------------------------------------------------------[0m
-[0;31mModuleNotFoundError[0m                       Traceback (most recent call last)
-Cell [0;32mIn[1], line 3[0m
-[1;32m      1[0m [38;5;28;01mimport[39;00m [38;5;21;01mnumpy[39;00m [38;5;28;01mas[39;00m [38;5;21;01mnp[39;00m
-[1;32m      2[0m [38;5;28;01mimport[39;00m [38;5;21;01mpandas[39;00m [38;5;28;01mas[39;00m [38;5;21;01mpd[39;00m
-[0;32m----> 3[0m [38;5;28;01mimport[39;00m [38;5;21;01mpandapower[39;00m [38;5;28;01mas[39;00m [38;5;21;01mpp[39;00m
-[1;32m      4[0m [38;5;28;01mimport[39;00m [38;5;21;01mplotly[39;00m[38;5;21;01m.[39;00m[38;5;21;01mgraph_objects[39;00m [38;5;28;01mas[39;00m [38;5;21;01mgo[39;00m
-[1;32m      6[0m [38;5;66;03m# Optional: Uncomment to disable numba warnings (or install numba in your poetry environment)[39;00m
-[1;32m      7[0m [38;5;66;03m# pp.options.numba = False[39;00m
+[0;31mKeyError[0m                                  Traceback (most recent call last)
+File [0;32m~/.cache/pypoetry/virtualenvs/roi-power-flow-sample-aukJIi7B-py3.12/lib/python3.12/site-packages/pandas/core/indexes/base.py:3805[0m, in [0;36mIndex.get_loc[0;34m(self, key)[0m
+[1;32m   3804[0m [38;5;28;01mtry[39;00m:
+[0;32m-> 3805[0m     [38;5;28;01mreturn[39;00m [38;5;28;43mself[39;49m[38;5;241;43m.[39;49m[43m_engine[49m[38;5;241;43m.[39;49m[43mget_loc[49m[43m([49m[43mcasted_key[49m[43m)[49m
+[1;32m   3806[0m [38;5;28;01mexcept[39;00m [38;5;167;01mKeyError[39;00m [38;5;28;01mas[39;00m err:
 
-[0;31mModuleNotFoundError[0m: No module named 'pandapower'
+File [0;32mindex.pyx:167[0m, in [0;36mpandas._libs.index.IndexEngine.get_loc[0;34m()[0m
+
+File [0;32mindex.pyx:196[0m, in [0;36mpandas._libs.index.IndexEngine.get_loc[0;34m()[0m
+
+File [0;32mpandas/_libs/hashtable_class_helper.pxi:7081[0m, in [0;36mpandas._libs.hashtable.PyObjectHashTable.get_item[0;34m()[0m
+
+File [0;32mpandas/_libs/hashtable_class_helper.pxi:7089[0m, in [0;36mpandas._libs.hashtable.PyObjectHashTable.get_item[0;34m()[0m
+
+[0;31mKeyError[0m: 'PTDF_Sum'
+
+The above exception was the direct cause of the following exception:
+
+[0;31mKeyError[0m                                  Traceback (most recent call last)
+Cell [0;32mIn[3], line 276[0m
+[1;32m    271[0m     [38;5;28;01mreturn[39;00m fig
+[1;32m    273[0m [38;5;66;03m# =============================================================================[39;00m
+[1;32m    274[0m [38;5;66;03m# 7. Call the Plot Function[39;00m
+[1;32m    275[0m [38;5;66;03m# =============================================================================[39;00m
+[0;32m--> 276[0m fig [38;5;241m=[39m [43mplot_network[49m[43m([49m
+[1;32m    277[0m [43m    [49m[43mrelevant_bus[49m[38;5;241;43m=[39;49m[43mrelevant_bus[49m[43m,[49m
+[1;32m    278[0m [43m    [49m[43mresults[49m[38;5;241;43m=[39;49m[43mresults[49m[43m,[49m
+[1;32m    279[0m [43m    [49m[43mbus_ids[49m[38;5;241;43m=[39;49m[43mbus_ids[49m[43m,[49m
+[1;32m    280[0m [43m    [49m[43mbest_results_full_discharge[49m[38;5;241;43m=[39;49m[43mbest_results_full_discharge[49m[43m,[49m
+[1;32m    281[0m [43m    [49m[43mcont_map[49m[38;5;241;43m=[39;49m[43mcont_map[49m[43m,[49m
+[1;32m    282[0m [43m    [49m[43mcontingency_trigger[49m[38;5;241;43m=[39;49m[38;5;28;43;01mTrue[39;49;00m
+[1;32m    283[0m [43m)[49m
+[1;32m    285[0m [38;5;66;03m# Convert the figure to an HTML snippet.[39;00m
+[1;32m    286[0m fig_html [38;5;241m=[39m fig[38;5;241m.[39mto_html(include_plotlyjs[38;5;241m=[39m[38;5;124m"[39m[38;5;124mcdn[39m[38;5;124m"[39m, full_html[38;5;241m=[39m[38;5;28;01mFalse[39;00m)
+
+Cell [0;32mIn[3], line 161[0m, in [0;36mplot_network[0;34m(relevant_bus, results, bus_ids, best_results_full_discharge, cont_map, contingency_trigger)[0m
+[1;32m    159[0m [38;5;28;01mfor[39;00m i, row [38;5;129;01min[39;00m best_results_full_discharge[38;5;241m.[39miterrows():
+[1;32m    160[0m     bus_id [38;5;241m=[39m row[[38;5;124m"[39m[38;5;124mBus_ID[39m[38;5;124m"[39m]
+[0;32m--> 161[0m     best_results_discharge_dict[bus_id] [38;5;241m=[39m ([43mrow[49m[43m[[49m[38;5;124;43m"[39;49m[38;5;124;43mPTDF_Sum[39;49m[38;5;124;43m"[39;49m[43m][49m, row[[38;5;124m"[39m[38;5;124mLODF_Percentile[39m[38;5;124m"[39m])
+[1;32m    163[0m [38;5;66;03m# Updated helper functions with NaN checks.[39;00m
+[1;32m    164[0m [38;5;28;01mdef[39;00m [38;5;21mget_line_color[39m(val, min_val[38;5;241m=[39m[38;5;241m0[39m, max_val[38;5;241m=[39m[38;5;241m100[39m):
+
+File [0;32m~/.cache/pypoetry/virtualenvs/roi-power-flow-sample-aukJIi7B-py3.12/lib/python3.12/site-packages/pandas/core/series.py:1121[0m, in [0;36mSeries.__getitem__[0;34m(self, key)[0m
+[1;32m   1118[0m     [38;5;28;01mreturn[39;00m [38;5;28mself[39m[38;5;241m.[39m_values[key]
+[1;32m   1120[0m [38;5;28;01melif[39;00m key_is_scalar:
+[0;32m-> 1121[0m     [38;5;28;01mreturn[39;00m [38;5;28;43mself[39;49m[38;5;241;43m.[39;49m[43m_get_value[49m[43m([49m[43mkey[49m[43m)[49m
+[1;32m   1123[0m [38;5;66;03m# Convert generator to list before going through hashable part[39;00m
+[1;32m   1124[0m [38;5;66;03m# (We will iterate through the generator there to check for slices)[39;00m
+[1;32m   1125[0m [38;5;28;01mif[39;00m is_iterator(key):
+
+File [0;32m~/.cache/pypoetry/virtualenvs/roi-power-flow-sample-aukJIi7B-py3.12/lib/python3.12/site-packages/pandas/core/series.py:1237[0m, in [0;36mSeries._get_value[0;34m(self, label, takeable)[0m
+[1;32m   1234[0m     [38;5;28;01mreturn[39;00m [38;5;28mself[39m[38;5;241m.[39m_values[label]
+[1;32m   1236[0m [38;5;66;03m# Similar to Index.get_value, but we do not fall back to positional[39;00m
+[0;32m-> 1237[0m loc [38;5;241m=[39m [38;5;28;43mself[39;49m[38;5;241;43m.[39;49m[43mindex[49m[38;5;241;43m.[39;49m[43mget_loc[49m[43m([49m[43mlabel[49m[43m)[49m
+[1;32m   1239[0m [38;5;28;01mif[39;00m is_integer(loc):
+[1;32m   1240[0m     [38;5;28;01mreturn[39;00m [38;5;28mself[39m[38;5;241m.[39m_values[loc]
+
+File [0;32m~/.cache/pypoetry/virtualenvs/roi-power-flow-sample-aukJIi7B-py3.12/lib/python3.12/site-packages/pandas/core/indexes/base.py:3812[0m, in [0;36mIndex.get_loc[0;34m(self, key)[0m
+[1;32m   3807[0m     [38;5;28;01mif[39;00m [38;5;28misinstance[39m(casted_key, [38;5;28mslice[39m) [38;5;129;01mor[39;00m (
+[1;32m   3808[0m         [38;5;28misinstance[39m(casted_key, abc[38;5;241m.[39mIterable)
+[1;32m   3809[0m         [38;5;129;01mand[39;00m [38;5;28many[39m([38;5;28misinstance[39m(x, [38;5;28mslice[39m) [38;5;28;01mfor[39;00m x [38;5;129;01min[39;00m casted_key)
+[1;32m   3810[0m     ):
+[1;32m   3811[0m         [38;5;28;01mraise[39;00m InvalidIndexError(key)
+[0;32m-> 3812[0m     [38;5;28;01mraise[39;00m [38;5;167;01mKeyError[39;00m(key) [38;5;28;01mfrom[39;00m [38;5;21;01merr[39;00m
+[1;32m   3813[0m [38;5;28;01mexcept[39;00m [38;5;167;01mTypeError[39;00m:
+[1;32m   3814[0m     [38;5;66;03m# If we have a listlike key, _check_indexing_error will raise[39;00m
+[1;32m   3815[0m     [38;5;66;03m#  InvalidIndexError. Otherwise we fall through and re-raise[39;00m
+[1;32m   3816[0m     [38;5;66;03m#  the TypeError.[39;00m
+[1;32m   3817[0m     [38;5;28mself[39m[38;5;241m.[39m_check_indexing_error(key)
+
+[0;31mKeyError[0m: 'PTDF_Sum'
 

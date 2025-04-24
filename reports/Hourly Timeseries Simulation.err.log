@@ -18,21 +18,377 @@ Traceback (most recent call last):
     raise CellExecutionError.from_cell_and_msg(cell, exec_reply_content)
 nbclient.exceptions.CellExecutionError: An error occurred while executing the following cell:
 ------------------
-import sys
-#print("Executable:", sys.executable)
-#print("sys.path:")
-for p in sys.path:
-    #print("  ", p)
-
+import numpy as np
+import pandas as pd
 import pandapower as pp
-#print("pandapower version:", pp.__version__)
+import plotly.graph_objects as go
+import plotly.io as pio
+from IPython.display import HTML, display
 
+
+# Optional: Uncomment to disable numba warnings (or install numba in your poetry environment)
+# pp.options.numba = False
+
+PF_SETTINGS = {
+    "algorithm": "nr",
+    "max_iteration": 100,
+    "tolerance_mva": 5e-3,
+    "init": "dc",
+    "enforce_q_lims": True,
+    "calculate_voltage_angles": True,
+    "logging": False,
+    "voltage_depend_loads": False,
+    "v_debug": True
+}
+
+# =============================================================================
+# 1. Load or Create the pandapower Network, based on hour with high solar gen and low wind gen
+# =============================================================================
+try:
+    net = pp.from_pickle("adjusted_network_1162.p")
+    #print("Loaded adjusted_network_1162.p")
+except Exception as e:
+    print("Could not load 'adjusted_network_1162.p'. Creating a demo network. Error:", e)
+    net = pp.create_empty_network()
+    b1 = pp.create_bus(net, vn_kv=110, name="Bus A")
+    b2 = pp.create_bus(net, vn_kv=110, name="Bus B")
+    b3 = pp.create_bus(net, vn_kv=110, name="Bus C")
+    pp.create_line(net, from_bus=b1, to_bus=b2, length_km=10, std_type="149-AL1/24-ST1A 110.0")
+    pp.create_line(net, from_bus=b2, to_bus=b3, length_km=15, std_type="149-AL1/24-ST1A 110.0")
+
+#Load flow can be used on singular hour to get load flow directions, voltages and more.
+pp.runpp(net, **PF_SETTINGS)
+#print("Load flow complete.")
+
+# =============================================================================
+# 2. Bus Filtering
+# =============================================================================
+if "geodata" in net.bus.columns:
+    filtered_buses = net.bus[
+        (net.bus["vn_kv"] >= 110) &
+        (net.bus["in_service"] == True) &
+        (net.bus["x1"] > 0) &
+        (net.bus["y1"] > 0)
+    ].copy()
+    filtered_buses["x1"] = filtered_buses["x1"]
+    filtered_buses["y1"] = filtered_buses["y1"]
+else:
+    filtered_buses = net.bus[(net.bus["vn_kv"] >= 110) & (net.bus["in_service"] == True)].copy()
+    np.random.seed(42)
+    filtered_buses["x1"] = np.random.uniform(0, 100, size=len(filtered_buses))
+    filtered_buses["y1"] = np.random.uniform(0, 100, size=len(filtered_buses))
+
+# Create a DataFrame similar to the original "relevant_bus"
+relevant_bus = pd.DataFrame({
+    "index": filtered_buses.index,
+    "x1": filtered_buses["x1"],
+    "y1": filtered_buses["y1"],
+    "bus_names": filtered_buses["bus_names"]
+})
+bus_ids = relevant_bus["index"].tolist()
+
+# =============================================================================
+# 3. Line Filtering
+# =============================================================================
+filtered_lines = net.line[net.line["in_service"] == True].copy()
+filtered_lines = filtered_lines[
+    filtered_lines["from_bus"].isin(bus_ids) & 
+    filtered_lines["to_bus"].isin(bus_ids)
+]
+
+results = filtered_lines.copy()
+results["loading_percent"] = net.res_line["loading_percent"]
+results["p_from_mw"] = net.res_line["p_from_mw"]
+results["name"] = results["name"].fillna("Unnamed Line")
+
+# =============================================================================
+# 4. Load Global Contingency Aggregator Data and Build Lookup
+# =============================================================================
+global_contingency_df = pd.read_csv("global_contingency_agg_final_Jan_Nov19_2031.csv")
+def normalize_name(name):
+    return " ".join(str(name).split()).strip().lower()
+
+cont_map = {}
+for i, row_c in global_contingency_df.iterrows():
+    bname = normalize_name(row_c["Branch_Name"])
+    max_intact_flow = row_c["Max_Intact_Flow_Percent"]
+    med_post_flow = row_c["Median_Post_Contingency_Flow_Percent"]
+    max_post_flow = row_c["Max_Post_Contingency_Flow_Percent"]
+    worst_outage = row_c["Worst_Case_Outage_For_Max"]
+    cont_map[bname] = (max_intact_flow,med_post_flow,max_post_flow, worst_outage)
+default_cont_data = ("N/A","N/A", "No data", "No data")
+
+# =============================================================================
+# 5. Load Bus Aggregator Data from bus_lodf_aggregator_June_Sept.csv
+# =============================================================================
+try:
+    bus_lodf_df = pd.read_csv("global_agg_final_Jan_Nov19_2031.csv")
+    def normalize_bus_name(name):
+        return " ".join(str(name).split()).lower()
+    bus_lodf_df["Normalized_Bus_Name"] = bus_lodf_df["Bus_Name"].apply(normalize_bus_name)
+    
+    best_list = []
+    for idx, row in relevant_bus.iterrows():
+        bus_name = row["bus_names"]
+        norm_bus_name = normalize_bus_name(bus_name)
+        match = bus_lodf_df[bus_lodf_df["Normalized_Bus_Name"] == norm_bus_name]
+        if not match.empty:
+            cumulative_otdf = match.iloc[0]["Cumulative_OTDF"]
+            maximum_otdf = match.iloc[0]["Maximum_OTDF"]
+            minimum_otdf = match.iloc[0]["Minimum_OTDF"]
+            median_otdf = match.iloc[0]["Median_OTDF"]
+            worst_circuit_otdf = match.iloc[0]["Worst_Circuit"]
+        else:
+            cumulative_otdf = np.nan
+            maximum_otdf = np.nan
+            minimum_otdf = np.nan
+            median_otdf = np.nan
+            worst_circuit_otdf = np.nan
+        best_list.append({
+            "Bus_ID": row["index"],
+            "cumulative_otdf": cumulative_otdf,
+            "maximum_otdf": maximum_otdf,
+            "minimum_otdf": minimum_otdf,
+            "median_otdf": median_otdf,
+            "worst_circuit_otdf": worst_circuit_otdf,
+        })
+    best_results_full_discharge = pd.DataFrame(best_list)
+    #print("Loaded bus-level aggregator data.")
+except Exception as e:
+    print("Error loading bus_lodf_aggregator_June_Sept.csv, using dummy data:", e)
+    best_results_full_discharge = pd.DataFrame({
+        "Bus_ID": relevant_bus["index"],
+        "cumulative_otdf": 0,
+        "maximum_otdf": 0,
+        "minimum_otdf": 0,
+        "median_otdf": 0,
+        "worst_circuit_otdf": 0,
+    })
+
+contingency_trigger = True
+
+# =============================================================================
+# 6. Plotting Function
+# =============================================================================
+def plot_network(relevant_bus, results, bus_ids, best_results_full_discharge, cont_map, contingency_trigger=True):
+    fig = go.Figure()
+    
+    # Build nodal aggregated dictionary.
+    best_results_discharge_dict = {}
+    for i, row in best_results_full_discharge.iterrows():
+        bus_id = row["Bus_ID"]
+        best_results_discharge_dict[bus_id] = (row["cumulative_otdf"], row["maximum_otdf"], row["minimum_otdf"], row["median_otdf"], row["worst_circuit_otdf"])
+    
+    # with NaN checks.
+    def get_line_color(val, min_val=0, max_val=100):
+        try:
+            # If val is "N/A" or anything non-numeric, this conversion will raise an error.
+            numeric_val = float(val)
+        except (ValueError, TypeError):
+            return "rgba(128,128,128,1)"
+        frac = np.interp(numeric_val, [min_val, max_val], [0, 1])
+        red = int(255 * frac)
+        blue = int(255 * (1 - frac))
+        return f"rgba({red}, 0, {blue}, 1)"
+    
+    def get_node_color(val, min_val=0, max_val=100):
+        if pd.isna(val):
+            return "rgba(128,128,128,1)"
+        frac = np.interp(val, [min_val, max_val], [0, 1])
+        red = int(255 * frac)
+        blue = int(255 * (1 - frac))
+        return f"rgba({red}, 0, {blue}, 1)"
+    
+    # Build adjusted coordinates: key = bus ID, value = (x, y, bus name)
+    adjusted_coords = {
+        row["index"]: (float(row["x1"]), float(row["y1"]), row["bus_names"])
+        for i, row in relevant_bus.iterrows() if pd.notna(row["x1"]) and pd.notna(row["y1"])
+    }
+    
+    annotations = []
+    traces = []
+    
+    # Plot buses.
+    for bus_id, (x, y, bname) in adjusted_coords.items():
+        ptdf_sum, lodf_pct, min_otdf, med_otdf,worst_circuit = best_results_discharge_dict.get(bus_id, ("N/A", "N/A"))
+        default_color = "rgba(128,128,128,1)"
+        node_color = default_color
+        if isinstance(lodf_pct, (int, float)):
+            node_color = get_node_color(lodf_pct)
+        text_node = (   f"Bus: {bname}<br>"
+                        f"Cumulative OTDF Sum: {ptdf_sum:.1f}<br>"
+                        f"Maximum OTDF: {lodf_pct:.1f}<br>"
+                        f"Minimum OTDF: {min_otdf:.1f}<br>"
+                        f"Median OTDF: {med_otdf:.1f}<br>"
+                        f"Worst Circuit: {worst_circuit}<br>"
+                    )
+        traces.append(go.Scatter(
+            x=[x], y=[y],
+            mode="markers",
+            text=[text_node],
+            hoverinfo="text",
+            marker=dict(size=10, color=default_color),
+            name=f"Bus {bus_id}"
+        ))
+        annotations.append(dict(
+            x=x, y=y, text=bname, showarrow=False,
+            font=dict(size=10, color="#ffffff"), bgcolor=node_color, opacity=0.8
+        ))
+    
+    # Plot lines.
+    for _, r_row in results.iterrows():
+        loading_percent = r_row["loading_percent"]
+        if pd.isna(loading_percent) or loading_percent == 0:
+            continue
+        if (r_row["from_bus"] not in adjusted_coords) or (r_row["to_bus"] not in adjusted_coords):
+            continue
+        from_coords = adjusted_coords[r_row["from_bus"]]
+        to_coords = adjusted_coords[r_row["to_bus"]]
+        
+        line_name = str(r_row["name"])
+        norm_line_name = normalize_name(line_name)
+        intact_max_loading,med_cont_loading, cont_loading, cause_name = cont_map.get(norm_line_name, default_cont_data) if contingency_trigger else ("N/A","N/A", "No data", "No data")
+        line_color = get_line_color(intact_max_loading)
+        
+        traces.append(go.Scatter(
+            x=[from_coords[0], to_coords[0]],
+            y=[from_coords[1], to_coords[1]],
+            mode="lines", line=dict(color=line_color, width=3),
+            hoverinfo="none"
+        ))
+        mid_x = (from_coords[0] + to_coords[0]) / 2
+        mid_y = (from_coords[1] + to_coords[1]) / 2
+        
+        text_line = (f"Branch: {line_name}<br>"
+                     f"Maximum Intact Loading: {intact_max_loading}%<br>"
+                     f"Median Post-Contingency Loading: {med_cont_loading}%<br>"
+                     f"Maximum Post-Contingency Loading: {cont_loading}%<br>"
+                     f"Worst Contingency Cause Element: {cause_name}")
+        traces.append(go.Scatter(
+            x=[mid_x], y=[mid_y],
+            mode="markers", marker=dict(size=5, color=line_color),
+            text=[text_line], hoverinfo="text"
+        ))
+        
+        #Below arrow annotation can be implemented, removed from now because it's based on singular hour load flow, aggregated edits needed.
+        """
+        if r_row["p_from_mw"] >= 0:
+            arrow_coords = (to_coords[0], to_coords[1], from_coords[0], from_coords[1])
+        else:
+            arrow_coords = (from_coords[0], from_coords[1], to_coords[0], to_coords[1])
+        annotations.append(dict(
+            x=mid_x, y=mid_y,
+            ax=arrow_coords[2], ay=arrow_coords[3],
+            xref="x", yref="y", axref="x", ayref="y",
+            showarrow=True, arrowhead=2, arrowsize=1, arrowwidth=2, arrowcolor=line_color
+        ))
+        """
+    
+    fig.add_traces(traces)
+    fig.update_layout(
+        annotations=annotations,
+        title="ROI Transmission Network June - September 2031, ECP-2.5",
+        showlegend=False,
+        autosize=True,
+        margin=dict(l=0, r=0, t=50, b=50),
+        #width=1000,
+        #height=800,
+        yaxis=dict(autorange="reversed")
+    )
+    #fig.show()
+    return fig
+
+# =============================================================================
+# 7. Call the Plot Function
+# =============================================================================
+fig = plot_network(
+    relevant_bus=relevant_bus,
+    results=results,
+    bus_ids=bus_ids,
+    best_results_full_discharge=best_results_full_discharge,
+    cont_map=cont_map,
+    contingency_trigger=True
+)
+
+#Let Plotly's layout be autosized
+fig.update_layout(
+    autosize=True,
+    margin=dict(l=20, r=20, t=40, b=20)
+)
+
+#Convert the figure to HTML with responsive config
+html_str = fig.to_html(
+    full_html=False,
+    include_plotlyjs="cdn",
+    config={"responsive": True}  # Make the figure responsive
+)
+
+# Embed it in the notebook.
+from IPython.display import HTML, display
+#Wrap it in a div that spans 100% width
+html_code = f"""
+<div style="max-width: 100%; margin: 0 auto;">
+{html_str}
+</div>
+"""
+display(HTML(html_code))
 ------------------
 
 
-[0;36m  Cell [0;32mIn[2], line 7[0;36m[0m
-[0;31m    import pandapower as pp[0m
-[0m    ^[0m
-[0;31mIndentationError[0m[0;31m:[0m expected an indented block after 'for' statement on line 4
+[0;31m---------------------------------------------------------------------------[0m
+[0;31mKeyError[0m                                  Traceback (most recent call last)
+File [0;32m~/.cache/pypoetry/virtualenvs/roi-power-flow-sample-aukJIi7B-py3.12/lib/python3.12/site-packages/pandas/core/indexes/base.py:3805[0m, in [0;36mIndex.get_loc[0;34m(self, key)[0m
+[1;32m   3804[0m [38;5;28;01mtry[39;00m:
+[0;32m-> 3805[0m     [38;5;28;01mreturn[39;00m [38;5;28;43mself[39;49m[38;5;241;43m.[39;49m[43m_engine[49m[38;5;241;43m.[39;49m[43mget_loc[49m[43m([49m[43mcasted_key[49m[43m)[49m
+[1;32m   3806[0m [38;5;28;01mexcept[39;00m [38;5;167;01mKeyError[39;00m [38;5;28;01mas[39;00m err:
 
+File [0;32mindex.pyx:167[0m, in [0;36mpandas._libs.index.IndexEngine.get_loc[0;34m()[0m
+
+File [0;32mindex.pyx:196[0m, in [0;36mpandas._libs.index.IndexEngine.get_loc[0;34m()[0m
+
+File [0;32mpandas/_libs/hashtable_class_helper.pxi:7081[0m, in [0;36mpandas._libs.hashtable.PyObjectHashTable.get_item[0;34m()[0m
+
+File [0;32mpandas/_libs/hashtable_class_helper.pxi:7089[0m, in [0;36mpandas._libs.hashtable.PyObjectHashTable.get_item[0;34m()[0m
+
+[0;31mKeyError[0m: 'Median_Post_Contingency_Flow_Percent'
+
+The above exception was the direct cause of the following exception:
+
+[0;31mKeyError[0m                                  Traceback (most recent call last)
+Cell [0;32mIn[3], line 95[0m
+[1;32m     93[0m bname [38;5;241m=[39m normalize_name(row_c[[38;5;124m"[39m[38;5;124mBranch_Name[39m[38;5;124m"[39m])
+[1;32m     94[0m max_intact_flow [38;5;241m=[39m row_c[[38;5;124m"[39m[38;5;124mMax_Intact_Flow_Percent[39m[38;5;124m"[39m]
+[0;32m---> 95[0m med_post_flow [38;5;241m=[39m [43mrow_c[49m[43m[[49m[38;5;124;43m"[39;49m[38;5;124;43mMedian_Post_Contingency_Flow_Percent[39;49m[38;5;124;43m"[39;49m[43m][49m
+[1;32m     96[0m max_post_flow [38;5;241m=[39m row_c[[38;5;124m"[39m[38;5;124mMax_Post_Contingency_Flow_Percent[39m[38;5;124m"[39m]
+[1;32m     97[0m worst_outage [38;5;241m=[39m row_c[[38;5;124m"[39m[38;5;124mWorst_Case_Outage_For_Max[39m[38;5;124m"[39m]
+
+File [0;32m~/.cache/pypoetry/virtualenvs/roi-power-flow-sample-aukJIi7B-py3.12/lib/python3.12/site-packages/pandas/core/series.py:1121[0m, in [0;36mSeries.__getitem__[0;34m(self, key)[0m
+[1;32m   1118[0m     [38;5;28;01mreturn[39;00m [38;5;28mself[39m[38;5;241m.[39m_values[key]
+[1;32m   1120[0m [38;5;28;01melif[39;00m key_is_scalar:
+[0;32m-> 1121[0m     [38;5;28;01mreturn[39;00m [38;5;28;43mself[39;49m[38;5;241;43m.[39;49m[43m_get_value[49m[43m([49m[43mkey[49m[43m)[49m
+[1;32m   1123[0m [38;5;66;03m# Convert generator to list before going through hashable part[39;00m
+[1;32m   1124[0m [38;5;66;03m# (We will iterate through the generator there to check for slices)[39;00m
+[1;32m   1125[0m [38;5;28;01mif[39;00m is_iterator(key):
+
+File [0;32m~/.cache/pypoetry/virtualenvs/roi-power-flow-sample-aukJIi7B-py3.12/lib/python3.12/site-packages/pandas/core/series.py:1237[0m, in [0;36mSeries._get_value[0;34m(self, label, takeable)[0m
+[1;32m   1234[0m     [38;5;28;01mreturn[39;00m [38;5;28mself[39m[38;5;241m.[39m_values[label]
+[1;32m   1236[0m [38;5;66;03m# Similar to Index.get_value, but we do not fall back to positional[39;00m
+[0;32m-> 1237[0m loc [38;5;241m=[39m [38;5;28;43mself[39;49m[38;5;241;43m.[39;49m[43mindex[49m[38;5;241;43m.[39;49m[43mget_loc[49m[43m([49m[43mlabel[49m[43m)[49m
+[1;32m   1239[0m [38;5;28;01mif[39;00m is_integer(loc):
+[1;32m   1240[0m     [38;5;28;01mreturn[39;00m [38;5;28mself[39m[38;5;241m.[39m_values[loc]
+
+File [0;32m~/.cache/pypoetry/virtualenvs/roi-power-flow-sample-aukJIi7B-py3.12/lib/python3.12/site-packages/pandas/core/indexes/base.py:3812[0m, in [0;36mIndex.get_loc[0;34m(self, key)[0m
+[1;32m   3807[0m     [38;5;28;01mif[39;00m [38;5;28misinstance[39m(casted_key, [38;5;28mslice[39m) [38;5;129;01mor[39;00m (
+[1;32m   3808[0m         [38;5;28misinstance[39m(casted_key, abc[38;5;241m.[39mIterable)
+[1;32m   3809[0m         [38;5;129;01mand[39;00m [38;5;28many[39m([38;5;28misinstance[39m(x, [38;5;28mslice[39m) [38;5;28;01mfor[39;00m x [38;5;129;01min[39;00m casted_key)
+[1;32m   3810[0m     ):
+[1;32m   3811[0m         [38;5;28;01mraise[39;00m InvalidIndexError(key)
+[0;32m-> 3812[0m     [38;5;28;01mraise[39;00m [38;5;167;01mKeyError[39;00m(key) [38;5;28;01mfrom[39;00m [38;5;21;01merr[39;00m
+[1;32m   3813[0m [38;5;28;01mexcept[39;00m [38;5;167;01mTypeError[39;00m:
+[1;32m   3814[0m     [38;5;66;03m# If we have a listlike key, _check_indexing_error will raise[39;00m
+[1;32m   3815[0m     [38;5;66;03m#  InvalidIndexError. Otherwise we fall through and re-raise[39;00m
+[1;32m   3816[0m     [38;5;66;03m#  the TypeError.[39;00m
+[1;32m   3817[0m     [38;5;28mself[39m[38;5;241m.[39m_check_indexing_error(key)
+
+[0;31mKeyError[0m: 'Median_Post_Contingency_Flow_Percent'
 

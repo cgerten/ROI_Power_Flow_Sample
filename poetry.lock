@@ -1388,6 +1388,64 @@ files = [
 ]
 
 [[package]]
+name = "lightsim2grid"
+version = "0.10.3"
+description = "LightSim2Grid implements a c++ backend targeting the Grid2Op platform."
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "LightSim2Grid-0.10.3-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:170669d639ef912cff90ecd533ea3b3f177b2152649138eb1468ed63109c7dc5"},
+    {file = "LightSim2Grid-0.10.3-cp37-cp37m-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:cc569ba8a384b9ad847c6c015b8327b25f6081d578c07407165698c45de1b0fa"},
+    {file = "LightSim2Grid-0.10.3-cp37-cp37m-win_amd64.whl", hash = "sha256:7d9ed0337c491d21b0a5780db0994981a0ea563c9569256e7330e1c6ec540a24"},
+    {file = "lightsim2grid-0.10.3-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:b8e70fb9b1d7aac8fcbcea4a2e14476ef010a7d985e9aa15c3af1c176cbe1636"},
+    {file = "lightsim2grid-0.10.3-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:e5d1a91257d6134e80616e531fac7af33402b5fc327c57975aa677782694f3ec"},
+    {file = "lightsim2grid-0.10.3-cp310-cp310-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:9853c45070d72efaae564e1b8b779742d4662d8610db472549f1410e796aac77"},
+    {file = "lightsim2grid-0.10.3-cp310-cp310-win_amd64.whl", hash = "sha256:f598c9d224d63cbe5652f33729ef0588b10d28f429ec2fe040950b737dc066ea"},
+    {file = "lightsim2grid-0.10.3-cp310-cp310-win_arm64.whl", hash = "sha256:65903aee42c03c9bcb264f964f976a4f494e0e2226b2e5ee0b3e3812fba0808e"},
+    {file = "lightsim2grid-0.10.3-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:322dbad373a6a3150ba2ebc18d33a82deef8fd532c648c5c3c338fd888f1690d"},
+    {file = "lightsim2grid-0.10.3-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:a5da34375d44512e3417074a3c055324555bdfb8f7605d41b19ed87e1c068741"},
+    {file = "lightsim2grid-0.10.3-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:886598c9a55b47ba4a5da02f219d81a08563d4dcda079890f51b16efb6579a9a"},
+    {file = "lightsim2grid-0.10.3-cp311-cp311-win_amd64.whl", hash = "sha256:2c0870e52972143b52351a1ff1d45a262c8e8c55980d23817a18609f84dc35c5"},
+    {file = "lightsim2grid-0.10.3-cp311-cp311-win_arm64.whl", hash = "sha256:31666c87785bcdce6c65a23bc56e126ef55f3b5a65afef3654cce26a7750475f"},
+    {file = "lightsim2grid-0.10.3-cp312-cp312-macosx_10_9_x86_64.whl", hash = "sha256:699e6e4bfcb2dc73db2795df2a22d6c3a35cb78b13f802bb2931507de197c5c5"},
+    {file = "lightsim2grid-0.10.3-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:994a9feadeb76a2e4989802ebfd2145c8cef240e6afdb7e03b8fcf6a565f4af4"},
+    {file = "lightsim2grid-0.10.3-cp312-cp312-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:5911dc972337571b2067a5a825a2b502a19b610ac55449da4daa554657900f79"},
+    {file = "lightsim2grid-0.10.3-cp312-cp312-win_amd64.whl", hash = "sha256:b5aaab6f09699d1eac997c54221823d2192f20277ebed6dc2afa60913f33518e"},
+    {file = "lightsim2grid-0.10.3-cp312-cp312-win_arm64.whl", hash = "sha256:6435d41c3ac43d23e3b38a551ed3e309c2d8df3594129cbe1f9d3bd5a0261caf"},
+    {file = "lightsim2grid-0.10.3-cp313-cp313-macosx_10_9_x86_64.whl", hash = "sha256:c58946b9bfd348ac8bc0cfbce6f5b0c6ce8b2efa7d783846c057090da934fe9a"},
+    {file = "lightsim2grid-0.10.3-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:b8091f7e39cb31c83d1532a4e69fe9facf0c8cb84806ad27be8f68b12ef6e2a5"},
+    {file = "lightsim2grid-0.10.3-cp313-cp313-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:b72fcf5a178ea0be19e9dd4df29df86d5cb755e310b9ebbc9764e843035e26cd"},
+    {file = "lightsim2grid-0.10.3-cp313-cp313-win_amd64.whl", hash = "sha256:f075d850b7182410fb51148448ff82d0780930271bf0ad53da9ee80e749c74a2"},
+    {file = "lightsim2grid-0.10.3-cp313-cp313-win_arm64.whl", hash = "sha256:187fbd956ca6cf521dbe27edb9f5014cbdf8f15d86d5aa27adfd5fa47c42d5ac"},
+    {file = "lightsim2grid-0.10.3-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:634d955224aae51d07d79d699dd5ede93f47b96e242129bb7e74fb6a763d55cf"},
+    {file = "lightsim2grid-0.10.3-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:3a8475754fd62475efbf198b57566269c9da8554b57f95f9aa527a842a1ea5dd"},
+    {file = "lightsim2grid-0.10.3-cp38-cp38-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:089a517c178d054dec43305d620135eabbb6c23093da0d3bfa8b8710124ca0f0"},
+    {file = "lightsim2grid-0.10.3-cp38-cp38-win_amd64.whl", hash = "sha256:6ec80faa3ff41a99f8db0704d30917e57d90725bf6ccd55231f50eecd2f0c7c4"},
+    {file = "lightsim2grid-0.10.3-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:8ade7cbddf15c6907e8e59936b8f2655ef27c2162587ffbb450c7165cd4aee36"},
+    {file = "lightsim2grid-0.10.3-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:ad9ef1c90b275ff70f20aa9af6cb0dce0df99993fb748e206cae159d75a67d93"},
+    {file = "lightsim2grid-0.10.3-cp39-cp39-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:f5c58cf3e4229185fc5e7137f358c9ae899efa17521adba406c0bcd2644c5c83"},
+    {file = "lightsim2grid-0.10.3-cp39-cp39-win_amd64.whl", hash = "sha256:431de0c3c23b20245e243f6d4c83efb93fa485bcd39bdfeca873613b524efc0e"},
+    {file = "lightsim2grid-0.10.3-cp39-cp39-win_arm64.whl", hash = "sha256:8669f4cfba54dbc50d3b8d0b2b8c8ac11e1037d0ff39dcd8c404211c25bbd259"},
+    {file = "lightsim2grid-0.10.3.tar.gz", hash = "sha256:b744861b9cf91d1e280eb2836916df543463e5484ff4a9b313323bdf0faa2f69"},
+]
+
+[package.dependencies]
+numpy = "*"
+packaging = "*"
+pip = "*"
+pybind11 = "*"
+scipy = "*"
+setuptools = "*"
+typing_extensions = "*"
+
+[package.extras]
+benchmark = ["distro", "grid2op (>=1.6.4)", "numpy (>=1.20)", "py-cpuinfo", "tabulate"]
+docs = ["autodocsumm (>=0.1.13)", "grid2op (>=1.6.4)", "numpydoc (>=0.9.2)", "pypowsybl", "recommonmark", "sphinx (>=2.4.4,<7)", "sphinx-rtd-theme (>=0.4.3)", "sphinxcontrib-trio (>=1.1.0)"]
+recommended = ["grid2op (>=1.6.4)", "numba"]
+test = ["grid2op (>=1.6.4)", "numba", "pandapower (>=2.14.0)", "pypowsybl"]
+
+[[package]]
 name = "linkify-it-py"
 version = "2.0.3"
 description = "Links recognition library with FULL unicode support."
@@ -2266,6 +2324,18 @@ files = [
 ptyprocess = ">=0.5"
 
 [[package]]
+name = "pip"
+version = "25.1.1"
+description = "The PyPA recommended tool for installing Python packages."
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "pip-25.1.1-py3-none-any.whl", hash = "sha256:2913a38a2abf4ea6b64ab507bd9e967f3b53dc1ede74b01b0931e1ce548751af"},
+    {file = "pip-25.1.1.tar.gz", hash = "sha256:3de45d411d308d5054c2168185d8da7f9a2cd753dbac8acbfa88a8909ecd9077"},
+]
+
+[[package]]
 name = "platformdirs"
 version = "4.2.2"
 description = "A small Python package for determining appropriate platform-specific dirs, e.g. a `user data dir`."
@@ -2427,6 +2497,21 @@ files = [
 
 [package.extras]
 tests = ["pytest"]
+
+[[package]]
+name = "pybind11"
+version = "2.13.6"
+description = "Seamless operability between C++11 and Python"
+optional = false
+python-versions = ">=3.7"
+groups = ["main"]
+files = [
+    {file = "pybind11-2.13.6-py3-none-any.whl", hash = "sha256:237c41e29157b962835d356b370ededd57594a26d5894a795960f0047cb5caf5"},
+    {file = "pybind11-2.13.6.tar.gz", hash = "sha256:ba6af10348c12b24e92fa086b39cfba0eff619b61ac77c406167d813b096d39a"},
+]
+
+[package.extras]
+global = ["pybind11-global (==2.13.6)"]
 
 [[package]]
 name = "pybtex"
@@ -3882,4 +3967,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.12"
-content-hash = "0d45d96e31a71909ca85dabe2670994f08982478cd746f4be13ee174e76d506f"
+content-hash = "f600c181ca0e9ad03fba5aaa980912e9cc4ecb8ec30c38087908c11d738f95a4"

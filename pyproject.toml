@@ -21,6 +21,7 @@ notebook = "^7.3.3"
 numba = "^0.61.2"
 pandapower = "^3.0.0"
 numpy = "^2.2.4"
+lightsim2grid = "^0.10.3"
 
 
 [build-system]

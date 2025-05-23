@@ -8,7 +8,19 @@ logo: logo_CLG.png
 # Force re-execution of notebooks on each build.
 # See https://jupyterbook.org/content/execute.html
 execute:
-  execute_notebooks: force
+  # choose one of: "off", "auto", "force", "cache"
+  # off    = never run the notebooks
+  # auto   = run them if outputs are missing
+  # force  = always re‐run
+  # cache  = run and cache (then reuse cache)
+  execute_notebooks: "auto"
+
+  # allow cells to error without stopping the build
+  allow_errors: true
+
+  # bump timeout if you have long‐running cells
+  timeout: 120
+
 
 # Define the name of the latex output file for PDF builds
 latex:

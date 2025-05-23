@@ -1,0 +1,172 @@
+Traceback (most recent call last):
+  File "/home/codespace/.cache/pypoetry/virtualenvs/roi-power-flow-sample-aukJIi7B-py3.12/lib/python3.12/site-packages/jupyter_cache/executors/utils.py", line 58, in single_nb_execution
+    executenb(
+  File "/home/codespace/.cache/pypoetry/virtualenvs/roi-power-flow-sample-aukJIi7B-py3.12/lib/python3.12/site-packages/nbclient/client.py", line 1314, in execute
+    return NotebookClient(nb=nb, resources=resources, km=km, **kwargs).execute()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/codespace/.cache/pypoetry/virtualenvs/roi-power-flow-sample-aukJIi7B-py3.12/lib/python3.12/site-packages/jupyter_core/utils/__init__.py", line 165, in wrapped
+    return loop.run_until_complete(inner)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/python/3.12.1/lib/python3.12/asyncio/base_events.py", line 684, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/home/codespace/.cache/pypoetry/virtualenvs/roi-power-flow-sample-aukJIi7B-py3.12/lib/python3.12/site-packages/nbclient/client.py", line 709, in async_execute
+    await self.async_execute_cell(
+  File "/home/codespace/.cache/pypoetry/virtualenvs/roi-power-flow-sample-aukJIi7B-py3.12/lib/python3.12/site-packages/nbclient/client.py", line 1062, in async_execute_cell
+    await self._check_raise_for_error(cell, cell_index, exec_reply)
+  File "/home/codespace/.cache/pypoetry/virtualenvs/roi-power-flow-sample-aukJIi7B-py3.12/lib/python3.12/site-packages/nbclient/client.py", line 918, in _check_raise_for_error
+    raise CellExecutionError.from_cell_and_msg(cell, exec_reply_content)
+nbclient.exceptions.CellExecutionError: An error occurred while executing the following cell:
+------------------
+def plot_network(results, bus_ids, cont_relevant_results):
+
+    fig = go.Figure()
+
+    # Prepare a color map for power flows
+    def get_line_color(loading_percent):
+        return np.interp(loading_percent, [0, 100], [0, 1])
+    
+    # Prepare a color map for node LODF
+    def get_node_color(lodf_pct):
+        return np.interp(lodf_pct, [0, 100], [0, 1])
+
+    # Handle coordinates for buses, bus_names, and annotations
+    adjusted_coords = {row['index']: (row['x1'], row['y1'], row['bus_names']) for i, row in net.bus.iterrows() if pd.notna(row['x1']) and pd.notna(row['y1']) and row['x1'] not in (0, '') and row['y1'] not in (0, '')}
+
+    # Cache annotations for adding them in one go later
+    annotations = []
+    traces = []
+
+    # Handle bus plotting
+    for bus_id, (x, y, bus_name) in adjusted_coords.items():
+        stats = df_agg_final[df_agg_final["Bus_Name"] == bus_name]
+        if not stats.empty:
+            cum       = stats["Cum_sOTDF"].iat[0]
+            max_s     = stats["Max_sOTDF"].iat[0]
+            circ_max  = stats["Circuit_Involved_max"].iat[0]
+            min_s     = stats["Min_sOTDF"].iat[0]
+            circ_min  = stats["Circuit_Involved_min"].iat[0]
+        else:
+            cum = max_s = circ_max = min_s = circ_min = "N/A"
+        if isinstance(cum, (int, float, np.floating)):
+            nc = get_node_color(cum)
+            node_color = f'rgba({255*nc:.0f}, 0, {255*(1-nc):.0f}, 1)'
+        else:
+            node_color = 'rgba(128,128,128,1)'
+        # Build hover‐text
+        hover_text = (
+            f"<b>Bus {bus_name} (ID {bus_id})</b><br>"
+            f"Cum_sOTDF: {cum}<br>"
+            f"Max_sOTDF: {max_s} (Circuit: {circ_max})<br>"
+            f"Min_sOTDF: {min_s} (Circuit: {circ_min})"
+        )
+
+        # Add it as a marker trace
+        traces.append(go.Scatter(
+            x=[x], y=[y],
+            text=[hover_text],
+            hoverinfo="text",
+            mode="markers",
+            marker=dict(size=12, color="blue"),
+            name=f"Bus {bus_id}"
+        ))
+
+        # Always annotate the bus name
+        annotations.append(dict(
+            x=x, y=y, text=bus_name,
+            showarrow=False,
+            font=dict(size=10, color="#ffffff"),
+            bgcolor=node_color,opacity=0.8
+        ))
+
+    #Filter out zero or NaN loading
+    results = results[ results['loading_percent'].ne(0)
+                    & results['loading_percent'].notna() ]
+    # Handle lines plotting
+    for _, row in results.iterrows():
+        loading_percent = row['loading_percent']
+        
+        # Skip plotting lines if the loading_percent is 0
+        if loading_percent == 0 or pd.isna(loading_percent):
+            continue
+            
+        from_coords = adjusted_coords.get(net.bus.loc[row['from_bus'],'old_index'])
+        to_coords = adjusted_coords.get(net.bus.loc[row['to_bus'],'old_index'])
+
+        if from_coords and to_coords:
+            loading_percent = row['loading_percent']
+            line_color = f'rgba({255 * get_line_color(loading_percent)}, 0, {255 * (1 - get_line_color(loading_percent))}, 1)'
+            traces.append(go.Scatter(x=[from_coords[0], to_coords[0]], y=[from_coords[1], to_coords[1]],
+                                     mode='lines', line=dict(color=line_color, width=3),
+                                     hoverinfo='none'))
+
+            mid_x, mid_y = (from_coords[0] + to_coords[0]) / 2, (from_coords[1] + to_coords[1]) / 2
+
+            # Check if there's relevant contingency data
+            contingency_info = cont_relevant_results[cont_relevant_results['Element Name'] == row['name']]
+            if not contingency_info.empty:
+                contingency_relevant_pct = contingency_info['Max Loading %'].values[0]
+                cause_element_name = contingency_info['Cause Element Name'].values[0]
+            else:
+                contingency_relevant_pct = "N/A"
+                cause_element_name = "No data"
+
+            # Add text to display on hover only
+            text_line = (f"Line {row['name']}<br>{loading_percent}% loading<br>"
+                         f"{contingency_relevant_pct}% under worst N-1 scenario<br>"
+                         f"Caused by: {cause_element_name}")
+            
+            traces.append(go.Scatter(x=[mid_x], y=[mid_y], text=[text_line], hoverinfo='text', mode='markers',
+                                     marker=dict(size=5, color=line_color)))
+
+            # Add arrow annotation for power flow direction if needed
+            arrow_x, arrow_y, ax_x, ax_y = (to_coords[0], to_coords[1], from_coords[0], from_coords[1]) if row['p_from_mw'] >= 0 else (from_coords[0], from_coords[1], to_coords[0], to_coords[1])
+            annotations.append(dict(x=mid_x, y=mid_y, ax=ax_x, ay=ax_y, xref="x", yref="y", axref="x", ayref="y", showarrow=True, arrowhead=2, arrowsize=1, arrowwidth=2, arrowcolor=line_color))
+
+    # Add traces and annotations to the figure
+    fig.add_traces(traces)
+    fig.update_layout(annotations=annotations, title='Network Diagram with Power Flow Results', showlegend=False, width=1000, height=800, yaxis=dict(autorange='reversed'))
+    fig.show()
+    
+#Put from and to bus into line results
+df = net.res_line.reset_index().rename(columns={'index':'line_id'})
+
+#grab exactly the in‐service metadata from net.line
+meta = net.line.loc[
+    net.line['in_service'],        # only in‐service rows
+    ['from_bus','to_bus','name']   # as a list, not separate args
+]
+
+# merge on the shared key line_id ↔ net.line.index
+results = df.merge(
+    meta,
+    left_on='line_id',
+    right_index=True,
+    how='left'
+)
+
+plot_network(results, bus_ids, contingency_output)
+------------------
+
+
+[0;31m---------------------------------------------------------------------------[0m
+[0;31mNameError[0m                                 Traceback (most recent call last)
+Cell [0;32mIn[5], line 128[0m
+[1;32m    120[0m [38;5;66;03m# merge on the shared key line_id ↔ net.line.index[39;00m
+[1;32m    121[0m results [38;5;241m=[39m df[38;5;241m.[39mmerge(
+[1;32m    122[0m     meta,
+[1;32m    123[0m     left_on[38;5;241m=[39m[38;5;124m'[39m[38;5;124mline_id[39m[38;5;124m'[39m,
+[1;32m    124[0m     right_index[38;5;241m=[39m[38;5;28;01mTrue[39;00m,
+[1;32m    125[0m     how[38;5;241m=[39m[38;5;124m'[39m[38;5;124mleft[39m[38;5;124m'[39m
+[1;32m    126[0m )
+[0;32m--> 128[0m [43mplot_network[49m[43m([49m[43mresults[49m[43m,[49m[43m [49m[43mbus_ids[49m[43m,[49m[43m [49m[43mcontingency_output[49m[43m)[49m
+
+Cell [0;32mIn[5], line 22[0m, in [0;36mplot_network[0;34m(results, bus_ids, cont_relevant_results)[0m
+[1;32m     20[0m [38;5;66;03m# Handle bus plotting[39;00m
+[1;32m     21[0m [38;5;28;01mfor[39;00m bus_id, (x, y, bus_name) [38;5;129;01min[39;00m adjusted_coords[38;5;241m.[39mitems():
+[0;32m---> 22[0m     stats [38;5;241m=[39m [43mdf_agg_final[49m[df_agg_final[[38;5;124m"[39m[38;5;124mBus_Name[39m[38;5;124m"[39m] [38;5;241m==[39m bus_name]
+[1;32m     23[0m     [38;5;28;01mif[39;00m [38;5;129;01mnot[39;00m stats[38;5;241m.[39mempty:
+[1;32m     24[0m         cum       [38;5;241m=[39m stats[[38;5;124m"[39m[38;5;124mCum_sOTDF[39m[38;5;124m"[39m][38;5;241m.[39miat[[38;5;241m0[39m]
+
+[0;31mNameError[0m: name 'df_agg_final' is not defined
+
